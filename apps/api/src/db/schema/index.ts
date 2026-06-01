@@ -1,0 +1,7 @@
+export * from './seiyuu'
+export * from './anime'
+export * from './character'
+export * from './voice_role'
+export * from './pairing'
+export * from './user'
+export * from './news'
