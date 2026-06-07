@@ -2,6 +2,7 @@ import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { swagger } from '@elysiajs/swagger'
 import { v1Routes } from './routes/v1'
+import { runStartupSync, scheduleCron } from './sync/cron'
 
 const app = new Elysia()
   .use(cors())
@@ -21,3 +22,7 @@ const app = new Elysia()
   .listen(3001)
 
 console.log(`API running at ${app.server?.hostname}:${app.server?.port}`)
+
+// run sync after server starts
+runStartupSync().catch(console.error)
+scheduleCron()
