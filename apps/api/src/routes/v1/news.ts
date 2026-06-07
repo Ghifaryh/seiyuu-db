@@ -1,9 +1,8 @@
 import { Elysia, t } from 'elysia'
 import { getNews, createNewsPost, deleteNewsPost } from '../../services/news.service'
+import { adminMiddleware } from '../../middleware/auth.middleware'
 
-export const newsRoutes = new Elysia({ prefix: '/news' })
-
-  // GET /api/v1/news
+const publicNewsRoutes = new Elysia({ prefix: '/news' })
   .get('/', async ({ query }) => {
     const limit = Number(query.limit ?? 20)
     return await getNews(query.category, limit)
@@ -14,7 +13,8 @@ export const newsRoutes = new Elysia({ prefix: '/news' })
     })
   })
 
-  // POST /api/v1/news — admin only (auth middleware later)
+const adminNewsRoutes = new Elysia({ prefix: '/news' })
+  .use(adminMiddleware)
   .post('/', async ({ body, set }) => {
     const result = await createNewsPost(body)
     set.status = 201
@@ -28,8 +28,6 @@ export const newsRoutes = new Elysia({ prefix: '/news' })
       createdBy: t.String()
     })
   })
-
-  // DELETE /api/v1/news/:id — admin only (auth middleware later)
   .delete('/:id', async ({ params, set }) => {
     const result = await deleteNewsPost(params.id)
     if (!result) {
@@ -40,3 +38,7 @@ export const newsRoutes = new Elysia({ prefix: '/news' })
   }, {
     params: t.Object({ id: t.String() })
   })
+
+export const newsRoutes = new Elysia()
+  .use(publicNewsRoutes)
+  .use(adminNewsRoutes)

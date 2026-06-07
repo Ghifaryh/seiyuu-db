@@ -5,10 +5,10 @@ import {
   createPairing,
   updatePairing
 } from '../../services/pairing.service'
+import { adminMiddleware } from '../../middleware/auth.middleware'
 
-export const pairingRoutes = new Elysia({ prefix: '/pairings' })
-
-  // GET /api/v1/pairings
+// public routes
+const publicPairingRoutes = new Elysia({ prefix: '/pairings' })
   .get('/', async ({ query }) => {
     const page = Number(query.page ?? 1)
     const limit = Number(query.limit ?? 24)
@@ -19,8 +19,6 @@ export const pairingRoutes = new Elysia({ prefix: '/pairings' })
       limit: t.Optional(t.String())
     })
   })
-
-  // GET /api/v1/pairings/:id
   .get('/:id', async ({ params, set }) => {
     const result = await getPairingById(params.id)
     if (!result) {
@@ -32,7 +30,9 @@ export const pairingRoutes = new Elysia({ prefix: '/pairings' })
     params: t.Object({ id: t.String() })
   })
 
-  // POST /api/v1/pairings — admin only (auth middleware later)
+// admin routes
+const adminPairingRoutes = new Elysia({ prefix: '/pairings' })
+  .use(adminMiddleware)
   .post('/', async ({ body, set }) => {
     const result = await createPairing(body)
     set.status = 201
@@ -45,8 +45,6 @@ export const pairingRoutes = new Elysia({ prefix: '/pairings' })
       description: t.Optional(t.String())
     })
   })
-
-  // PATCH /api/v1/pairings/:id — admin only (auth middleware later)
   .patch('/:id', async ({ params, body, set }) => {
     const result = await updatePairing(params.id, body)
     if (!result) {
@@ -61,3 +59,8 @@ export const pairingRoutes = new Elysia({ prefix: '/pairings' })
       description: t.Optional(t.String())
     })
   })
+
+// export both together
+export const pairingRoutes = new Elysia()
+  .use(publicPairingRoutes)
+  .use(adminPairingRoutes)

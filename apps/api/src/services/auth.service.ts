@@ -35,6 +35,21 @@ export async function register(email: string, password: string) {
   return { user }
 }
 
+// export async function login(email: string, password: string) {
+//   const [user] = await db
+//     .select()
+//     .from(appUser)
+//     .where(eq(appUser.email, email))
+//
+//   if (!user) return { error: 'Invalid credentials' }
+//
+//   const valid = await verifyPassword(password, user.passwordHash)
+//   if (!valid) return { error: 'Invalid credentials' }
+//
+//   const token = generateToken(user.id, user.role ?? 'user')
+//   return { token, user: { id: user.id, email: user.email, role: user.role } }
+// }
+
 export async function login(email: string, password: string) {
   const [user] = await db
     .select()
@@ -46,6 +61,26 @@ export async function login(email: string, password: string) {
   const valid = await verifyPassword(password, user.passwordHash)
   if (!valid) return { error: 'Invalid credentials' }
 
-  const token = generateToken(user.id, user.role ?? 'user')
-  return { token, user: { id: user.id, email: user.email, role: user.role } }
+  // return user data — JWT signing happens in the route
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role ?? 'user'
+    }
+  }
+}
+
+export async function getUserById(id: string) {
+  const [user] = await db
+    .select({
+      id: appUser.id,
+      email: appUser.email,
+      role: appUser.role,
+      createdAt: appUser.createdAt
+    })
+    .from(appUser)
+    .where(eq(appUser.id, id))
+
+  return user ?? null
 }
