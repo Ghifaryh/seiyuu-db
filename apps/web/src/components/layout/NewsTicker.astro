@@ -1,0 +1,35 @@
+---
+const newsItems = [
+	{
+		icon: '🎤',
+		text: 'Kana Hanazawa cast as lead in upcoming Spring 2026 original anime',
+	},
+	{ icon: '🏢', text: 'Yoshitsugu Matsuoka renews contract with Pro-Fit' },
+	{
+		icon: '🎤',
+		text: 'Aoi Yuuki announced for lead role in Summer 2026 NHK series',
+	},
+]
+---
+
+<div
+	class='bg-teal-950/40 border-b border-teal-800/40 px-6 py-2 flex items-center gap-4 overflow-hidden'
+>
+	<span
+		class='text-xs font-medium px-2.5 py-1 rounded-full bg-teal-600 text-teal-50 whitespace-nowrap flex-shrink-0'
+	>
+		News
+	</span>
+	<div class='flex gap-8 overflow-hidden'>
+		{
+			newsItems.map((item, i) => (
+				<span class='text-sm text-teal-200 whitespace-nowrap flex items-center gap-2'>
+					<span>{item.icon}</span> {item.text}
+					{i < newsItems.length - 1 && (
+						<span class='text-teal-700 ml-6'>·</span>
+					)}
+				</span>
+			))
+		}
+	</div>
+</div>

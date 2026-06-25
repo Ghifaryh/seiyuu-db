@@ -1,28 +1,117 @@
 ---
-// no frontmatter needed yet
-import '../styles/global.css'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Nav from '../components/layout/Nav.astro'
+import NewsTicker from '../components/layout/NewsTicker.astro'
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>seiyuu.db</title>
-  </head>
-  <body class="bg-gray-950 text-white min-h-screen flex items-center justify-center">
-    <div class="text-center space-y-4">
-      <h1 class="text-4xl font-medium tracking-tight">
-        seiyuu<span class="text-teal-400">.db</span>
-      </h1>
-      <p class="text-gray-400 text-sm">The seiyuu database built for real fans</p>
-      <div class="flex gap-2 justify-center">
-        <span class="text-xs px-3 py-1 rounded-full bg-teal-900 text-teal-300">
-          Kanji supported
-        </span>
-        <span class="text-xs px-3 py-1 rounded-full bg-teal-900 text-teal-300">
-          Fuzzy match
-        </span>
-      </div>
-    </div>
-  </body>
-</html>
+<BaseLayout title='seiyuu.db — Find any voice actor'>
+	<Nav slot='nav' />
+	<NewsTicker slot='nav' />
+
+	<div class='max-w-3xl mx-auto px-6 py-16'>
+		<div class='text-center mb-10'>
+			<h1 class='text-4xl font-medium leading-snug mb-3'>
+				The seiyuu database<br />built for <span class='text-teal-400'
+					>real fans</span
+				>
+			</h1>
+			<p class='text-base text-neutral-400'>
+				Search by kanji, romaji, or any name order — we'll figure it out
+			</p>
+		</div>
+
+		<div
+			class='flex items-center gap-3 border-2 border-teal-600 rounded-xl px-5 py-4 mb-4'
+		>
+			<span class='text-teal-500 text-xl'>🔍</span>
+			<input
+				type='text'
+				placeholder='茅野愛衣 · Kayano Ai · Ai Kayano...'
+				class='flex-1 bg-transparent outline-none text-base placeholder:text-neutral-500'
+			/>
+		</div>
+
+		<div class='flex gap-2 flex-wrap mb-12 justify-center'>
+			{
+				[
+					'Kanji & kana',
+					'Flexible name order',
+					'Romaji',
+					'Fuzzy match',
+				].map((hint) => (
+					<span class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'>
+						✓ {hint}
+					</span>
+				))
+			}
+		</div>
+
+		<p
+			class='text-sm font-medium uppercase tracking-wide text-neutral-500 mb-4'
+		>
+			Popular this season
+		</p>
+
+		<div class='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4'>
+			{
+				[
+					{
+						name: 'Ai Kayano',
+						jp: '茅野愛衣',
+						initials: 'AK',
+						roles: 12,
+						slug: 'ai-kayano',
+					},
+					{
+						name: 'Hiroshi Kamiya',
+						jp: '神谷浩史',
+						initials: 'HK',
+						roles: 9,
+						slug: 'hiroshi-kamiya',
+					},
+					{
+						name: 'Kana Hanazawa',
+						jp: '花澤香菜',
+						initials: 'KH',
+						roles: 8,
+						slug: 'kana-hanazawa',
+					},
+					{
+						name: 'Yuki Kaji',
+						jp: '梶裕貴',
+						initials: 'YK',
+						roles: 7,
+						slug: 'yuki-kaji',
+					},
+					{
+						name: 'Aoi Yuuki',
+						jp: '悠木碧',
+						initials: 'AY',
+						roles: 6,
+						slug: 'aoi-yuuki',
+					},
+				].map((va) => (
+					<a
+						href={`/seiyuu/${va.slug}`}
+						class='border border-neutral-800 rounded-xl overflow-hidden hover:border-neutral-600 transition-colors'
+					>
+						<div class='aspect-[2/3] bg-neutral-900 flex items-center justify-center border-b border-neutral-800'>
+							<div class='w-16 h-16 rounded-full bg-teal-900/60 flex items-center justify-center text-lg font-medium text-teal-300'>
+								{va.initials}
+							</div>
+						</div>
+						<div class='p-3'>
+							<div class='text-sm font-medium'>{va.name}</div>
+							<div class='text-xs text-neutral-500 mt-1'>
+								{va.jp}
+							</div>
+							<span class='text-xs mt-2 inline-block px-2 py-0.5 rounded-full bg-teal-900/60 text-teal-300'>
+								{va.roles} roles
+							</span>
+						</div>
+					</a>
+				))
+			}
+		</div>
+	</div>
+</BaseLayout>

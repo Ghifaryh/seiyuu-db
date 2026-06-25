@@ -21,7 +21,14 @@ export async function runStartupSync() {
 
 // schedule nightly sync at 2am
 export function scheduleCron() {
-  Bun.cron('0 2 * * *', async () => {
+  const cron = (Bun as typeof Bun & { cron?: (expression: string, handler: () => Promise<void> | void) => void }).cron
+
+  if (!cron) {
+    console.log('⏰ Bun.cron is not available in this Bun runtime; skipping scheduled sync')
+    return
+  }
+
+  cron('0 2 * * *', async () => {
     console.log('🕐 Nightly sync starting...')
     const now = new Date()
     const month = now.getMonth() + 1
