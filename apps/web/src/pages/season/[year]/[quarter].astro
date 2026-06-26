@@ -1,0 +1,153 @@
+---
+export const prerender = false
+
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import Nav from '../../../components/layout/Nav.astro'
+import NewsTicker from '../../../components/layout/NewsTicker.astro'
+import {
+	getSeasonOptions,
+	formatSeasonLabel,
+	seasonToValue,
+	type Quarter,
+} from '../../../lib/season'
+
+const { year, quarter } = Astro.params
+
+const viewedSeason = {
+	year: Number(year),
+	quarter: (quarter as Quarter) ?? 'spring',
+}
+
+// dropdown always shows [previous, current, next] relative to the season being VIEWED
+// not necessarily today's real season — so navigating forward/back keeps the window sliding
+const seasonOptions = getSeasonOptions(viewedSeason)
+
+// mock data for now — will be replaced with a real fetch to /api/v1/season/:year/:quarter
+const animeList = [
+	{
+		id: 'mushoku-tensei-3',
+		title: 'Mushoku Tensei III',
+		studio: 'Studio Bind',
+		status: 'airing',
+		episode: 8,
+		cast: [
+			{
+				character: 'Rudeus Greyrat',
+				seiyuu: 'Yuki Kaji',
+				initials: 'YK',
+			},
+			{
+				character: 'Zenith Greyrat',
+				seiyuu: 'Ai Kayano',
+				initials: 'AK',
+			},
+		],
+	},
+]
+---
+
+<BaseLayout title={`${formatSeasonLabel(viewedSeason)} — seiyuu.db`}>
+	<Nav slot='nav' />
+	<NewsTicker slot='nav' />
+
+	<div class='max-w-3xl mx-auto px-6 py-10'>
+		<div class='flex items-center justify-between mb-2 flex-wrap gap-3'>
+			<div>
+				<h1 class='text-2xl font-medium'>
+					{formatSeasonLabel(viewedSeason)}
+				</h1>
+				<p class='text-sm text-neutral-400 mt-1'>
+					Voice cast by airing anime
+				</p>
+			</div>
+			<select
+				id='season-select'
+				class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300'
+			>
+				{
+					seasonOptions.map((opt) => (
+						<option
+							value={seasonToValue(opt)}
+							selected={
+								seasonToValue(opt) ===
+								seasonToValue(viewedSeason)
+							}
+						>
+							{formatSeasonLabel(opt)}
+						</option>
+					))
+				}
+			</select>
+		</div>
+		<!--
+		<div class='flex gap-2 my-6'>
+			<button
+				data-view='anime'
+				class='view-btn text-sm px-3.5 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'
+				>By anime</button
+			>
+			<button
+				data-view='seiyuu'
+				class='view-btn text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
+				>By seiyuu</button
+			>
+		</div> -->
+
+		<div class='flex flex-col gap-4'>
+			{
+				animeList.map((anime) => (
+					<a
+						href={`/anime/${anime.id}`}
+						class='block border border-neutral-800 rounded-xl overflow-hidden hover:border-neutral-600 transition-colors'
+					>
+						<div class='flex items-center gap-3 px-4 py-3 bg-neutral-900/50 border-b border-neutral-800'>
+							<div class='w-9 h-12 rounded-md bg-neutral-800 flex items-center justify-center flex-shrink-0'>
+								<i class='ti ti-photo text-neutral-500 text-base' />
+							</div>
+							<div class='flex-1'>
+								<div class='text-sm font-medium'>
+									{anime.title}
+								</div>
+								<div class='text-xs text-neutral-500 mt-0.5'>
+									{anime.studio}
+								</div>
+							</div>
+							<span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300 flex items-center gap-1.5 whitespace-nowrap'>
+								<span class='w-1.5 h-1.5 rounded-full bg-teal-400' />
+								Ep {anime.episode} airing
+							</span>
+						</div>
+						<div class='flex flex-wrap'>
+							{anime.cast.map((c) => (
+								<div class='flex items-center gap-2.5 px-4 py-3 border-r border-b border-neutral-800 flex-1 min-w-[180px]'>
+									<div class='w-8 h-8 rounded-full bg-teal-900/60 flex items-center justify-center text-xs font-medium text-teal-300 flex-shrink-0'>
+										{c.initials}
+									</div>
+									<div class='min-w-0'>
+										<div class='text-sm font-medium truncate'>
+											{c.seiyuu}
+										</div>
+										<div class='text-xs text-neutral-500 truncate'>
+											{c.character}
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</a>
+				))
+			}
+		</div>
+	</div>
+</BaseLayout>
+
+<script>
+	const seasonSelect = document.getElementById(
+		'season-select',
+	) as HTMLSelectElement | null
+
+	seasonSelect?.addEventListener('change', () => {
+		const [year, quarter] = seasonSelect.value.split('-')
+		window.location.href = `/season/${year}/${quarter}`
+	})
+</script>
