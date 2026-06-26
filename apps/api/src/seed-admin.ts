@@ -12,16 +12,16 @@ const [existing] = await db.select().from(appUser).where(eq(appUser.email, email
 
 if (existing) {
   await db.update(appUser)
-    .set({ passwordHash: hash, role: 'admin' })
+    .set({ passwordHash: hash, role: 'superadmin' })
     .where(eq(appUser.id, existing.id))
-  console.log(`Admin user updated: ${email}`)
+  console.log(`Superadmin updated: ${email}`)
 } else {
   await db.insert(appUser).values({
     email,
     passwordHash: hash,
-    role: 'admin',
+    role: 'superadmin',
   })
-  console.log(`Admin user created: ${email}`)
+  console.log(`Superadmin created: ${email}`)
 }
 
 process.exit(0)

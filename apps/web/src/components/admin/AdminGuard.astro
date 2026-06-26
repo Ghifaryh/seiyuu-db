@@ -6,7 +6,7 @@
   } else {
     try {
       const user = JSON.parse(userStr)
-      if (user.role !== 'admin') {
+      if (user.role !== 'admin' && user.role !== 'superadmin') {
         window.location.href = '/admin/login'
       }
     } catch {

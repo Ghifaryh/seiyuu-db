@@ -1,8 +1,8 @@
 import { Elysia, t } from 'elysia'
-import { register, login } from '../../services/auth.service'
+import { register, login, changePassword } from '../../services/auth.service'
 import { jwtPlugin } from '../../plugins/jwt'
 
-export const authRoutes = new Elysia({ prefix: '/auth' })
+const publicAuthRoutes = new Elysia()
   .use(jwtPlugin)
 
   // POST /api/v1/auth/register
@@ -29,7 +29,6 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       return { message: result.error }
     }
 
-    // sign real JWT
     const token = await jwt.sign({
       id: result.user!.id,
       email: result.user!.email,
@@ -45,8 +44,30 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
   })
 
   // POST /api/v1/auth/logout
-  // JWT is stateless so logout is handled client-side
-  // but we expose the endpoint for convention
   .post('/logout', () => {
     return { message: 'Logged out successfully' }
   })
+
+  // POST /api/v1/auth/change-password
+  .post('/change-password', async ({ body, set, jwt, headers }) => {
+    const token = headers['authorization']?.replace('Bearer ', '')
+    if (!token) { set.status = 401; return { message: 'Unauthorized' } }
+    const payload = await jwt.verify(token)
+    if (!payload) { set.status = 401; return { message: 'Invalid token' } }
+
+    const targetId = (body as any).userId || payload.id
+    if (targetId !== payload.id && payload.role !== 'superadmin') {
+      set.status = 403
+      return { message: 'Forbidden' }
+    }
+    await changePassword(targetId as string, (body as any).password)
+    return { message: 'Password changed' }
+  }, {
+    body: t.Object({
+      password: t.String(),
+      userId: t.Optional(t.String()),
+    })
+  })
+
+export const authRoutes = new Elysia({ prefix: '/auth' })
+  .use(publicAuthRoutes)

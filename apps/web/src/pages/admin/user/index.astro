@@ -1,0 +1,163 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
+---
+
+<AdminGuard />
+<AdminLayout title='Users — seiyuu.db admin'>
+  <div class='px-8 py-8 max-w-3xl'>
+    <div class='flex items-center justify-between mb-8'>
+      <div>
+        <h1 class='text-2xl font-medium mb-1'>Users</h1>
+        <p class='text-sm text-neutral-400' id='user-role-label'>Manage admin accounts</p>
+      </div>
+      <button id='show-create-btn' class='hidden text-sm px-4 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>+ Add user</button>
+    </div>
+
+    <div id='create-form' class='hidden border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 mb-6'>
+      <h3 class='text-sm font-medium mb-3'>New user</h3>
+      <div class='flex gap-3 items-end flex-wrap'>
+        <input id='new-email' type='email' placeholder='Email' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <input id='new-password' type='password' placeholder='Password' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <select id='new-role' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white'>
+          <option value='admin'>Admin</option>
+          <option value='superadmin'>Superadmin</option>
+        </select>
+        <button id='create-btn' class='text-sm px-3 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>Create</button>
+        <button id='cancel-create' class='text-sm px-3 py-2 rounded-md text-neutral-400 hover:text-neutral-200'>Cancel</button>
+      </div>
+      <p id='create-msg' class='text-sm mt-2 hidden'></p>
+    </div>
+
+    <div class='border border-neutral-800 rounded-xl overflow-hidden'>
+      <div id='user-rows'></div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const API_BASE = 'http://localhost:3001/api/v1'
+
+  function getAuthHeaders() {
+    const token = localStorage.getItem('seiyuu_token')
+    return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  }
+
+  const currentUser = JSON.parse(localStorage.getItem('seiyuu_user') || '{}')
+  const isSuperAdmin = currentUser.role === 'superadmin'
+
+  if (isSuperAdmin) {
+    document.getElementById('show-create-btn')!.classList.remove('hidden')
+    document.getElementById('user-role-label')!.textContent = 'Manage admin accounts (superadmin)'
+  } else {
+    document.getElementById('user-role-label')!.textContent = 'View-only — superadmins can manage users'
+  }
+
+  async function loadUsers() {
+    const container = document.getElementById('user-rows')!
+    try {
+      const res = await fetch(`${API_BASE}/admin/users`, { headers: getAuthHeaders() })
+      const users = await res.json()
+
+      container.innerHTML = users.map((u: any) => {
+        const isSelf = u.id === currentUser.id
+        return `
+        <div class='px-5 py-3.5 border-b border-neutral-800 last:border-b-0'>
+          <div class='flex items-center justify-between flex-wrap gap-2'>
+            <div>
+              <div class='text-sm font-medium'>${u.email} ${isSelf ? '<span class="text-xs text-neutral-500">(you)</span>' : ''}</div>
+              <div class='flex items-center gap-2 mt-1'>
+                <span class='text-xs px-2 py-0.5 rounded-full ${u.role === 'superadmin' ? 'bg-purple-900/50 text-purple-300' : 'bg-teal-900/50 text-teal-300'}'>${u.role}</span>
+                <span class='text-xs text-neutral-500'>${new Date(u.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div class='flex items-center gap-2'>
+              ${isSuperAdmin || isSelf ? `<button data-changepw='${u.id}' class='changepw-btn text-xs px-2 py-1 rounded-md border border-neutral-700 text-neutral-400 hover:bg-neutral-900'>Change PW</button>` : ''}
+              ${isSuperAdmin && !isSelf ? `<button data-delete='${u.id}' class='text-xs px-2 py-1 rounded-md border border-red-800/50 text-red-400 hover:bg-red-950/30'>Delete</button>` : ''}
+            </div>
+          </div>
+          <div class='changepw-form hidden mt-3 flex items-center gap-2' data-user='${u.id}'>
+            <input type='password' placeholder='New password' class='changepw-input text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white outline-none focus:border-teal-600' />
+            <button class='confirm-pw text-xs px-2 py-1 rounded-md bg-teal-600 text-teal-50'>Save</button>
+            <span class='pw-msg text-xs text-teal-400 hidden'></span>
+          </div>
+        </div>`
+      }).join('')
+
+      // change password
+      document.querySelectorAll('.changepw-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-changepw')
+          const form = document.querySelector(`.changepw-form[data-user="${id}"]`) as HTMLElement
+          form.classList.toggle('hidden')
+        })
+      })
+
+      document.querySelectorAll('.confirm-pw').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const form = btn.closest('.changepw-form') as HTMLElement
+          const uid = form.getAttribute('data-user')!
+          const input = form.querySelector('.changepw-input') as HTMLInputElement
+          const msg = form.querySelector('.pw-msg') as HTMLElement
+          const pw = input.value.trim()
+          if (!pw) return
+
+          const res = await fetch(`${API_BASE}/auth/change-password`, {
+            method: 'POST', headers: getAuthHeaders(),
+            body: JSON.stringify({ password: pw, userId: uid !== currentUser.id ? uid : undefined }),
+          })
+          if (res.ok) {
+            msg.textContent = 'Changed!'; msg.classList.remove('hidden')
+            setTimeout(() => { msg.classList.add('hidden'); form.classList.add('hidden'); input.value = '' }, 1500)
+          } else {
+            msg.textContent = 'Failed'; msg.classList.remove('hidden')
+          }
+        })
+      })
+
+      // delete
+      document.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-delete')!
+          if (!confirm('Delete this user?')) return
+          const res = await fetch(`${API_BASE}/admin/users/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
+          if (res.ok) loadUsers()
+        })
+      })
+    } catch {
+      container.innerHTML = '<div class="px-5 py-4 text-sm text-neutral-500">Failed to load</div>'
+    }
+  }
+
+  document.getElementById('show-create-btn')?.addEventListener('click', () => {
+    document.getElementById('create-form')!.classList.remove('hidden')
+  })
+  document.getElementById('cancel-create')?.addEventListener('click', () => {
+    document.getElementById('create-form')!.classList.add('hidden')
+  })
+  document.getElementById('create-btn')?.addEventListener('click', async () => {
+    const email = (document.getElementById('new-email') as HTMLInputElement).value.trim()
+    const password = (document.getElementById('new-password') as HTMLInputElement).value
+    const role = (document.getElementById('new-role') as HTMLSelectElement).value
+    const msg = document.getElementById('create-msg')!
+    msg.classList.add('hidden')
+    if (!email || !password) { msg.textContent = 'Email and password required'; msg.classList.remove('hidden'); return }
+
+    const res = await fetch(`${API_BASE}/admin/users`, {
+      method: 'POST', headers: getAuthHeaders(),
+      body: JSON.stringify({ email, password, role }),
+    })
+    if (res.ok) {
+      document.getElementById('create-form')!.classList.add('hidden')
+      ;(document.getElementById('new-email') as HTMLInputElement).value = ''
+      ;(document.getElementById('new-password') as HTMLInputElement).value = ''
+      loadUsers()
+    } else {
+      const data = await res.json()
+      msg.textContent = data.message || 'Failed'
+      msg.classList.remove('hidden')
+    }
+  })
+
+  loadUsers()
+</script>

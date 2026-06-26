@@ -7,14 +7,14 @@ const API_BASE = 'http://localhost:3001/api/v1'
 <BaseLayout title='Admin login — seiyuu.db'>
   <div class='min-h-screen flex items-center justify-center px-6'>
     <div class='w-full max-w-sm'>
-      <div class='flex items-center gap-2.5 justify-center mb-8'>
+      <a href='/' class='flex items-center gap-2.5 justify-center mb-8'>
         <div class='w-[34px] h-[34px] rounded-lg bg-teal-600 flex items-center justify-center text-[10px] font-medium text-teal-50 flex-shrink-0'>
           seiyuu
         </div>
         <div class='text-[17px] font-medium tracking-tight'>
           seiyuu<span class='text-teal-400'>.db</span>
         </div>
-      </div>
+      </a>
 
       <div class='border border-neutral-800 rounded-xl p-6 bg-neutral-900/50'>
         <h1 class='text-lg font-medium mb-1 text-center'>Admin sign in</h1>
@@ -76,7 +76,7 @@ const API_BASE = 'http://localhost:3001/api/v1'
       }
 
       const data = await res.json()
-      if (data.user.role !== 'admin') {
+      if (data.user.role !== 'admin' && data.user.role !== 'superadmin') {
         errorMsg.textContent = 'Not an admin account'
         errorMsg.classList.remove('hidden')
         return

@@ -84,3 +84,42 @@ export async function getUserById(id: string) {
 
   return user ?? null
 }
+
+export async function getAllUsers() {
+  return db
+    .select({
+      id: appUser.id,
+      email: appUser.email,
+      role: appUser.role,
+      createdAt: appUser.createdAt
+    })
+    .from(appUser)
+    .orderBy(appUser.createdAt)
+}
+
+export async function updateUserRole(id: string, role: string) {
+  const [result] = await db
+    .update(appUser)
+    .set({ role })
+    .where(eq(appUser.id, id))
+    .returning()
+  return result ?? null
+}
+
+export async function changePassword(id: string, newPassword: string) {
+  const hash = await Bun.password.hash(newPassword)
+  const [result] = await db
+    .update(appUser)
+    .set({ passwordHash: hash })
+    .where(eq(appUser.id, id))
+    .returning()
+  return result ?? null
+}
+
+export async function deleteUser(id: string) {
+  const [result] = await db
+    .delete(appUser)
+    .where(eq(appUser.id, id))
+    .returning()
+  return result ?? null
+}
