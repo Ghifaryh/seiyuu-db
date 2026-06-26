@@ -6,11 +6,13 @@
 #   DATABASE_URL      — PostgreSQL connection string
 #   JWT_SECRET        — JWT signing secret
 #
-# IMPORTANT: The frontend expects the API at http://localhost:3001.
-# Run a reverse proxy (nginx/traefik) on your VPS:
-#   - Route /api/* to the api container (port 3001)
-#   - Route everything else to the web container (port 4321)
-# Or set both ports to public and update the frontend build arg.
+# In your Caddyfile, add:
+#   handle_path /api/* {
+#     reverse_proxy api:3001
+#   }
+#   handle {
+#     reverse_proxy web:4321
+#   }
 
 services:
   meilisearch:
@@ -19,8 +21,6 @@ services:
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_ENV: production
-    ports:
-      - "7700:7700"
     volumes:
       - meili_data:/meili_data
 
@@ -34,8 +34,6 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3001
       SYNC_ON_STARTUP: "false"
-    ports:
-      - "3001:3001"
     depends_on:
       - meilisearch
 
@@ -45,10 +43,12 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 4321
-    ports:
-      - "4321:4321"
+      API_URL: http://api:3001
     depends_on:
       - api
+
+volumes:
+  meili_data:
 
 volumes:
   meili_data:

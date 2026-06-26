@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
 import Avatar from '../../components/Avatar.astro'
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 const currentPage = Number(Astro.url.searchParams.get('page') ?? 1)
 const limit = 24
@@ -26,7 +27,7 @@ interface SeiyuuData {
 let data: SeiyuuData = { data: [], page: 1, limit, total: 0, totalPages: 1 }
 
 try {
-  const res = await fetch(`http://localhost:3001/api/v1/seiyuu?page=${currentPage}&limit=${limit}`)
+  const res = await fetch(`${apiBase}/api/v1/seiyuu?page=${currentPage}&limit=${limit}`)
   if (res.ok) data = await res.json()
 } catch {}
 ---

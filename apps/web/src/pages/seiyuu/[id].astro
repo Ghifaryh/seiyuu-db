@@ -1,11 +1,13 @@
 ---
 export const prerender = false
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
 import Avatar from '../../components/Avatar.astro'
 import { getInitials, formatSeason } from '../../lib/api'
+import { API_BASE } from '../../lib/api'
 
 const { id } = Astro.params
 
@@ -50,8 +52,8 @@ let roles: RoleItem[] = []
 let error = ''
 
 try {
-  profile = await fetch(`http://localhost:3001/api/v1/seiyuu/${id}`).then(r => r.ok ? r.json() : null)
-  roles = await fetch(`http://localhost:3001/api/v1/seiyuu/${id}/roles`).then(r => r.ok ? r.json() : [])
+  profile = await fetch(`${apiBase}/api/v1/seiyuu/${id}`).then(r => r.ok ? r.json() : null)
+  roles = await fetch(`${apiBase}/api/v1/seiyuu/${id}/roles`).then(r => r.ok ? r.json() : [])
 } catch {
   error = 'Failed to load seiyuu data'
 }

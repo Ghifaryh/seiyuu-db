@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import Avatar from '../../components/Avatar.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 interface NewsItem {
   id: string
@@ -16,7 +17,7 @@ interface NewsItem {
 
 let newsPosts: NewsItem[] = []
 try {
-  const res = await fetch('http://localhost:3001/api/v1/news?limit=20')
+  const res = await fetch(`${apiBase}/api/v1/news?limit=20`)
   if (res.ok) newsPosts = await res.json()
 } catch {}
 

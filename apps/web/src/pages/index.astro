@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import Nav from '../components/layout/Nav.astro'
 import NewsTicker from '../components/layout/NewsTicker.astro'
 
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
+
 interface SeiyuuCard {
   id: string
   nameRomaji: string
@@ -13,7 +15,7 @@ interface SeiyuuCard {
 
 let popular: SeiyuuCard[] = []
 try {
-  const res = await fetch('http://localhost:3001/api/v1/season/current/seiyuu')
+  const res = await fetch(`${apiBase}/api/v1/season/current/seiyuu`)
   if (res.ok) {
     const data = await res.json() as { data: SeiyuuCard[] }
     popular = data.data?.slice(0, 9) ?? []

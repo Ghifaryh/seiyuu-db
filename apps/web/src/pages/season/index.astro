@@ -4,6 +4,7 @@ import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
 import Avatar from '../../components/Avatar.astro'
 import { getSeasonOptions, formatSeasonLabel, seasonToValue, getCurrentSeason, type Quarter } from '../../lib/season'
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 const season = getCurrentSeason()
 const seasonOptions = getSeasonOptions(season)
@@ -31,7 +32,7 @@ let totalPages = 1
 let total = 0
 
 try {
-  const res = await fetch(`http://localhost:3001/api/v1/season/${season.year}/${season.quarter}?page=${currentPage}&limit=${limit}`)
+  const res = await fetch(`${apiBase}/api/v1/season/${season.year}/${season.quarter}?page=${currentPage}&limit=${limit}`)
   if (res.ok) {
     const result = await res.json() as { data: AnimeCard[]; total: number; totalPages: number }
     animeList = result.data ?? []

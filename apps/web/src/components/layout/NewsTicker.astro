@@ -11,7 +11,7 @@ let newsItems: { icon: string; text: string }[] = [
 ]
 
 try {
-  const res = await fetch('http://localhost:3001/api/v1/news?limit=5')
+  const res = await fetch('/api/v1/news?limit=5')
   if (res.ok) {
     const data = await res.json() as NewsItem[]
     if (data.length > 0) {

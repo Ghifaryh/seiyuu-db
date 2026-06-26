@@ -1,5 +1,6 @@
 ---
 export const prerender = false
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 import BaseLayout from '../../../layouts/BaseLayout.astro'
 import Nav from '../../../components/layout/Nav.astro'
@@ -34,7 +35,7 @@ let totalPages = 1
 let total = 0
 
 try {
-  const res = await fetch(`http://localhost:3001/api/v1/season/${year}/${quarter}?page=${currentPage}&limit=${limit}`)
+  const res = await fetch(`${apiBase}/api/v1/season/${year}/${quarter}?page=${currentPage}&limit=${limit}`)
   if (res.ok) {
     const result = await res.json() as { data: AnimeCard[]; total: number; totalPages: number }
     animeList = result.data ?? []

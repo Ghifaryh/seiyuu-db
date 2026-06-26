@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import Avatar from '../../components/Avatar.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 interface PairingRow {
   pairing: {
@@ -19,7 +20,7 @@ interface PairingRow {
 
 let pairings: PairingRow[] = []
 try {
-  const res = await fetch('http://localhost:3001/api/v1/pairings?page=1&limit=24')
+  const res = await fetch(`${apiBase}/api/v1/pairings?page=1&limit=24`)
   if (res.ok) pairings = await res.json()
 } catch {}
 ---

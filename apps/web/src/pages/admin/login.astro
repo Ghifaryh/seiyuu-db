@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
 
-const API_BASE = 'http://localhost:3001/api/v1'
+const API_BASE = '/api/v1'
 ---
 
 <BaseLayout title='Admin login — seiyuu.db'>
@@ -61,7 +61,7 @@ const API_BASE = 'http://localhost:3001/api/v1'
     } catch {}
   }
 
-  const API_BASE = 'http://localhost:3001/api/v1'
+  const API_BASE = '/api/v1'
   const form = document.getElementById('login-form') as HTMLFormElement
   const errorMsg = document.getElementById('error-msg') as HTMLParagraphElement
 

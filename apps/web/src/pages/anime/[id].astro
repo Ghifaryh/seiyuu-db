@@ -1,11 +1,13 @@
 ---
 export const prerender = false
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Avatar from '../../components/Avatar.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
 import { formatSeason } from '../../lib/api'
+import { API_BASE } from '../../lib/api'
 
 const { id } = Astro.params
 
@@ -31,7 +33,7 @@ let anime: AnimeDetail | null = null
 let error = ''
 
 try {
-  const res = await fetch(`http://localhost:3001/api/v1/anime/${id}`)
+  const res = await fetch(`${apiBase}/api/v1/anime/${id}`)
   if (res.ok) anime = await res.json()
   else error = 'Anime not found'
 } catch {

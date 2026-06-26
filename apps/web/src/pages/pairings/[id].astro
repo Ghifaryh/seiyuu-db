@@ -29,7 +29,7 @@ let pairing: PairingDetail | null = null
 let error = ''
 
 try {
-  const res = await fetch(`http://localhost:3001/api/v1/pairings/${id}`)
+  const res = await fetch(`/api/v1/pairings/${id}`)
   if (res.ok) pairing = await res.json()
   else error = 'Pairing not found'
 } catch {
