@@ -2,11 +2,12 @@
 
 ## Setup & dev workflow
 
-1. `docker compose up -d` — starts MeiliSearch (7700). PostgreSQL runs on the user's STB (`100.84.225.86:5432`)
-2. Copy `apps/api/.env.example` → `apps/api/.env`
+1. `MEILI_MASTER_KEY=<key> docker compose up -d` — starts MeiliSearch (7700). PostgreSQL runs on the user's STB
+2. Copy `apps/api/.env.example` → `apps/api/.env` and fill in real values
 3. `bun install` from root (Bun workspaces monorepo)
-4. `bun run dev:api` (port 3001) and `bun run dev:web` (port 4321) from root
-5. Swagger docs: `http://localhost:3001/swagger`
+4. `bun run dev:api` (port 3001, sync skipped by default) and `bun run dev:web` (port 4321) from root
+5. Seed admin: `bun run apps/api/src/seed-admin.ts` (reads `ADMIN_EMAIL`/`ADMIN_PASSWORD` from env)
+6. Swagger docs: `http://localhost:3001/swagger`
 
 ## Monorepo structure
 
@@ -21,42 +22,59 @@
 - `bun run db:migrate` — applies migrations (requires `DATABASE_URL` env)
 - Schema barrel: `apps/api/src/db/schema/index.ts` — re-exports all tables
 - Drizzle patterns: no `relations()` helpers are used; FKs are set via `references()` constraints only
-- Conflict resolution on sync: `ON CONFLICT (source) DO UPDATE` for upserts
+- All tables use `source: text('source').unique()` for idempotent upserts — `ON CONFLICT (source) DO UPDATE`
 
 ## API patterns
 
 - All routes under `/api/v1/*` (grouped in `apps/api/src/routes/v1/index.ts`)
-- Each route file exports a named Elysia instance with its own prefix
-- Public and admin routes for the same resource **share a file**: separate Elysia instances (`publicFooRoutes`, `adminFooRoutes`) composed together
-- Admin routes use `adminMiddleware` (JWT verification + role check)
+- Public and admin routes for the same resource **share a file**: separate Elysia instances composed together
+- `adminMiddleware` — accepts `admin` and `superadmin` roles (JWT verification)
+- `superAdminMiddleware` — only `superadmin` (user management endpoints)
 - Request validation uses `t.Object()` inline schemas (Elysia's type system, TypeBox under the hood)
 - All routes delegate to service layer in `apps/api/src/services/`
-- Startup sync (`runStartupSync`) and nightly 2am cron (`scheduleCron`) run after `app.listen()` — not blocking, fire-and-forget
-- To skip startup sync in dev: `SYNC_ON_STARTUP=false bun run dev:api`
-
-## Frontend notes
-
-- **All pages currently use hardcoded mock data** — no real API integration yet
-- Three dynamic pages set `export const prerender = false`: `seiyuu/[id]`, `season/[year]/[quarter]`, `pairings/[id]`
-- Tailwind v4 is imported via `@import "tailwindcss"` in global CSS (CSS-first config, no `tailwind.config.*`)
-- Admin uses `AdminLayout.astro` + `AdminSplitLayout.astro` (latter includes a live-preview iframe)
-- Season utilities in `apps/web/src/lib/season.ts` — used by both API and web (duplicated logic)
-
-## TypeScript
-
-- Root `tsconfig.json`: uses `"types": ["bun"]`, `"moduleResolution": "bundler"`, `"verbatimModuleSyntax": true`
-- API sub-config extends `tsconfig.base.json`
-- Web sub-config extends `astro/tsconfigs/strict`
-- No typecheck script configured anywhere — `tsc --noEmit` is not wired up
-
-## Testing & linting
-
-- **No test infrastructure exists** (no test files, no vitest/jest config)
-- **No linter or formatter configured** (no ESLint, Prettier, Biome, etc.)
+- `SYNC_ON_STARTUP=false` set in root `package.json` dev:api script — startup sync skipped by default
+- Nightly 2am cron via `Bun.cron` for scheduled sync
 
 ## Sync pipeline
 
 - AniList GraphQL fetcher → normaliser → Drizzle upserts → MeiliSearch bulk index
-- Rate limiting: `Bun.sleep(700)` between AniList pages
-- MeiliSearch index settings in `apps/api/src/sync/lib/meili.ts` (typo-tolerant on name fields)
-- Manual sync via admin: `POST /api/v1/sync/season/:year/:quarter`
+- Rate limiting: `Bun.sleep(700)` between AniList pages (~85 req/min, under 90 limit)
+- On-demand seiyuu enrichment: visiting a seiyuu profile triggers full career fetch from AniList (fire-and-forget, sets `enriched = true` so it only runs once)
+- Manual sync via admin: `POST /api/v1/sync/season/:year/:quarter` or `/admin/sync` page
+
+## Frontend patterns
+
+- **All pages fetch from real API** — no mock data remains
+- Tailwind v4 is imported via `@import "tailwindcss"` in global CSS (no `tailwind.config.*`)
+- Admin uses `AdminLayout.astro` + `AdminSplitLayout.astro` (latter includes a live-preview iframe)
+- `AdminGuard.astro` — client-side auth check, redirects to `/admin/login` if no valid JWT
+- `Avatar.astro` — reusable component, shows image if `imageUrl` exists, initials circle fallback
+- `apps/web/src/lib/season.ts` — season utilities shared across pages
+- **Astro `<script>` blocks are compiled as ES modules** — inline `onclick` handlers can't reach module-scoped functions. Use event delegation with data attributes instead. Astro template variables (`{id}`) are NOT interpolated in `<script>` blocks — use `window.location.pathname` or `define:vars`
+
+## Auth
+
+- Two-tier: `superadmin` (can manage users) and `admin` (everything except user management)
+- Login stores JWT + user in `localStorage` under keys `seiyuu_token` / `seiyuu_user`
+- `/admin/login` redirects to `/admin` if already logged in
+- Password change: users can change own, superadmin can change any
+
+## News CRUD
+
+- `GET /api/v1/news/:id` — single post with joined seiyuu data
+- `POST /api/v1/news` — create (admin, body optional)
+- `PATCH /api/v1/news/:id` — edit (admin)
+- `DELETE /api/v1/news/:id` — delete (admin)
+- "Has body" toggle: posts without body require `sourceUrl`. Public list opens source in new tab. Public detail redirects to source URL.
+
+## Pairings
+
+- `POST /api/v1/pairings/:id/detect` — auto-find shared anime between both seiyuu, populates `pairingAnime` table
+- Detection runs in background after pairing creation
+- Pairing create uses search-as-you-type pickers (not slow dropdown of all 400+ seiyuu)
+
+## Known quirks
+
+- Astro v6 prod build requires `@astrojs/node` adapter (has Bun compatibility issues — dev mode works fine)
+- No test infrastructure, no linter, no typecheck scripts exist
+- `veriformModuleSyntax: true` on API — use `type` keyword explicitly for type-only imports
