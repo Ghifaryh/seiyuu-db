@@ -1,0 +1,65 @@
+---
+import AdminLayout from './AdminLayout.astro'
+
+interface Props {
+	title?: string
+	previewUrl?: string
+}
+
+const { title = 'Admin — seiyuu.db', previewUrl } = Astro.props
+---
+
+<AdminLayout title={title}>
+	<div class='flex h-[calc(100vh-56px)] md:h-screen'>
+		<div class='flex-1 min-w-0 overflow-y-auto'>
+			<slot />
+		</div>
+
+		<div
+			class='hidden lg:flex flex-col w-[520px] border-l border-neutral-800 flex-shrink-0'
+		>
+			<div
+				class='flex items-center justify-between px-4 h-12 border-b border-neutral-800 flex-shrink-0'
+			>
+				<div class='flex items-center gap-2 text-sm text-neutral-400'>
+					<i class='ti ti-eye text-base'></i>
+					Live preview
+				</div>
+				{
+					previewUrl && (
+						<a
+							href={previewUrl}
+							target='_blank'
+							rel='noopener noreferrer'
+							class='text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1'
+						>
+							Open in new tab
+							<i class='ti ti-external-link text-sm' />
+						</a>
+					)
+				}
+			</div>
+
+			<div
+				class='flex-1 flex items-center justify-center bg-neutral-900 p-4 overflow-hidden'
+			>
+				{
+					previewUrl ? (
+						<div class='w-full h-full border border-neutral-800 rounded-2xl overflow-hidden bg-neutral-950'>
+							<iframe
+								id='preview-frame'
+								src={previewUrl}
+								class='w-full h-full'
+								title='Public page preview'
+							/>
+						</div>
+					) : (
+						<p class='text-sm text-neutral-600 text-center px-6'>
+							Preview will appear here once this record is saved
+						</p>
+					)
+				}
+			</div>
+		</div>
+	</div>
+</AdminLayout>

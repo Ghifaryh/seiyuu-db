@@ -1,0 +1,126 @@
+---
+import '../styles/global.css'
+
+interface Props {
+	title?: string
+}
+
+const { title = 'Admin — seiyuu.db' } = Astro.props
+
+const adminLinks = [
+	{ label: 'Overview', href: '/admin', icon: 'ti-layout-dashboard' },
+	{ label: 'Seiyuu', href: '/admin/seiyuu', icon: 'ti-users' },
+	{ label: 'Anime', href: '/admin/anime', icon: 'ti-movie' },
+	{ label: 'Pairings', href: '/admin/pairings', icon: 'ti-heart' },
+	{ label: 'News', href: '/admin/news', icon: 'ti-news' },
+	{ label: 'Sync', href: '/admin/sync', icon: 'ti-refresh' },
+]
+const currentPath = Astro.url.pathname
+---
+
+<!doctype html>
+<html lang='en'>
+	<head>
+		<meta charset='utf-8' />
+		<meta name='viewport' content='width=device-width' />
+		<title>{title}</title>
+	</head>
+	<body class='bg-neutral-950 text-white min-h-screen'>
+		<!-- mobile top bar -->
+		<div
+			class='md:hidden flex items-center justify-between px-4 h-14 border-b border-neutral-800'
+		>
+			<div class='flex items-center gap-2 text-sm font-medium'>
+				seiyuu<span class='text-teal-400'>.db</span>
+				<span class='text-neutral-500 text-xs'>admin</span>
+			</div>
+			<button
+				id='sidebar-toggle'
+				class='w-9 h-9 flex items-center justify-center rounded-md hover:bg-neutral-900'
+				aria-label='Toggle menu'
+			>
+				<i class='ti ti-menu-2 text-xl'></i>
+			</button>
+		</div>
+
+		<div class='flex'>
+			<!-- sidebar: hidden on mobile by default, slides in as overlay -->
+			<aside
+				id='sidebar'
+				class='hidden md:flex md:flex-col w-60 border-r border-neutral-800 flex-shrink-0 fixed md:sticky top-0 left-0 h-screen bg-neutral-950 z-20'
+			>
+				<div
+					class='hidden md:flex items-center gap-2.5 px-5 h-16 border-b border-neutral-800'
+				>
+					<div
+						class='w-7 h-7 rounded-md bg-teal-600 flex items-center justify-center text-[9px] font-medium text-teal-50 flex-shrink-0'
+					>
+						seiyuu
+					</div>
+					<div class='text-sm font-medium'>
+						seiyuu<span class='text-teal-400'>.db</span>
+						<span class='text-neutral-500 text-xs ml-1'>admin</span>
+					</div>
+				</div>
+
+				<nav class='flex flex-col gap-1 p-3 flex-1'>
+					{
+						adminLinks.map((link) => {
+							const isActive = currentPath === link.href
+							const linkClass = isActive
+								? 'flex items-center gap-2.5 text-sm font-medium px-3 py-2 rounded-md text-teal-300 bg-teal-900/40'
+								: 'flex items-center gap-2.5 text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900'
+							return (
+								<a href={link.href} class={linkClass}>
+									<i class={`ti ${link.icon} text-base`} />
+									{link.label}
+								</a>
+							)
+						})
+					}
+				</nav>
+
+				<div class='p-3 border-t border-neutral-800'>
+					<button
+						class='flex items-center gap-2.5 text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900 w-full'
+					>
+						<i class='ti ti-logout text-base'></i>
+						Log out
+					</button>
+				</div>
+			</aside>
+
+			<!-- backdrop, mobile only, shown when sidebar is open -->
+			<div
+				id='sidebar-backdrop'
+				class='hidden fixed inset-0 bg-black/60 z-10 md:!hidden'
+			>
+			</div>
+
+			<main class='flex-1 min-w-0'>
+				<slot />
+			</main>
+		</div>
+	</body>
+</html>
+
+<script>
+	const toggle = document.getElementById('sidebar-toggle')
+	const sidebar = document.getElementById('sidebar')
+	const backdrop = document.getElementById('sidebar-backdrop')
+
+	function openSidebar() {
+		sidebar?.classList.remove('hidden')
+		sidebar?.classList.add('flex', 'flex-col')
+		backdrop?.classList.remove('hidden')
+	}
+
+	function closeSidebar() {
+		sidebar?.classList.add('hidden')
+		sidebar?.classList.remove('flex', 'flex-col')
+		backdrop?.classList.add('hidden')
+	}
+
+	toggle?.addEventListener('click', openSidebar)
+	backdrop?.addEventListener('click', closeSidebar)
+</script>

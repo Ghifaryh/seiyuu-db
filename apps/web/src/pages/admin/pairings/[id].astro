@@ -1,0 +1,222 @@
+---
+export const prerender = false
+
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+
+const { id } = Astro.params
+const isNew = id === 'new'
+
+// mock data for now — will be replaced with a real fetch to /api/v1/pairings/:id
+const pairing = isNew
+	? {
+			seiyuuAId: '',
+			seiyuuBId: '',
+			pairName: '',
+			description: '',
+			sharedCount: 0,
+			isAutoDetected: false,
+		}
+	: {
+			seiyuuAId: 'yoshitsugu-matsuoka',
+			seiyuuBId: 'ai-kayano',
+			nameA: 'Yoshitsugu Matsuoka',
+			nameB: 'Ai Kayano',
+			pairName: 'The SAO Duo',
+			description:
+				"Kirito & Asuna · one of anime's most iconic voice pairings",
+			sharedCount: 8,
+			isAutoDetected: false,
+		}
+
+// mock list for the seiyuu picker dropdowns
+const allSeiyuu = [
+	{ id: 'ai-kayano', name: 'Ai Kayano' },
+	{ id: 'hiroshi-kamiya', name: 'Hiroshi Kamiya' },
+	{ id: 'kana-hanazawa', name: 'Kana Hanazawa' },
+	{ id: 'yuki-kaji', name: 'Yuki Kaji' },
+	{ id: 'aoi-yuuki', name: 'Aoi Yuuki' },
+	{ id: 'yoshitsugu-matsuoka', name: 'Yoshitsugu Matsuoka' },
+]
+---
+
+<AdminLayout title={`${isNew ? 'New pairing' : pairing.pairName} — seiyuu.db`}>
+	<div class='px-5 md:px-8 py-6 md:py-8 max-w-2xl'>
+		<a
+			href='/admin/pairings'
+			class='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200 mb-5'
+		>
+			<i class='ti ti-arrow-left text-base'></i>
+			Back to pairings
+		</a>
+
+		<h1 class='text-2xl font-medium mb-1'>
+			{isNew ? 'New pairing' : 'Edit pairing'}
+		</h1>
+		<p class='text-sm text-neutral-500 mb-8'>
+			{
+				isNew
+					? 'Manually link two seiyuu as a recognized duo'
+					: 'Update the name or description for this pairing'
+			}
+		</p>
+
+		{
+			!isNew && pairing.isAutoDetected !== undefined && (
+				<div class='flex items-center gap-2 mb-6 text-sm px-4 py-2.5 rounded-md bg-neutral-900/50 border border-neutral-800 text-neutral-400'>
+					<i class='ti ti-info-circle text-base flex-shrink-0' />
+					This pairing was auto-detected from shared anime
+					appearances. Naming it below makes it a permanent named
+					pairing.
+				</div>
+			)
+		}
+
+		<form id='pairing-form' class='flex flex-col gap-5'>
+			<div class='grid grid-cols-2 gap-4'>
+				<div>
+					<label
+						for='seiyuuA'
+						class='text-sm text-neutral-400 block mb-1.5'
+						>Seiyuu A</label
+					>
+					<select
+						id='seiyuuA'
+						disabled={!isNew}
+						class={isNew
+							? 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
+							: 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-800 bg-neutral-900/50 text-neutral-400'}
+					>
+						{isNew && <option value=''>Select seiyuu...</option>}
+						{
+							allSeiyuu.map((s) => (
+								<option
+									value={s.id}
+									selected={s.id === pairing.seiyuuAId}
+								>
+									{s.name}
+								</option>
+							))
+						}
+					</select>
+				</div>
+				<div>
+					<label
+						for='seiyuuB'
+						class='text-sm text-neutral-400 block mb-1.5'
+						>Seiyuu B</label
+					>
+					<select
+						id='seiyuuB'
+						disabled={!isNew}
+						class={isNew
+							? 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
+							: 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-800 bg-neutral-900/50 text-neutral-400'}
+					>
+						{isNew && <option value=''>Select seiyuu...</option>}
+						{
+							allSeiyuu.map((s) => (
+								<option
+									value={s.id}
+									selected={s.id === pairing.seiyuuBId}
+								>
+									{s.name}
+								</option>
+							))
+						}
+					</select>
+				</div>
+			</div>
+
+			<div>
+				<label
+					for='pairName'
+					class='text-sm text-neutral-400 block mb-1.5'
+					>Pair name</label
+				>
+				<input
+					type='text'
+					id='pairName'
+					value={pairing.pairName}
+					placeholder='e.g. The SAO Duo'
+					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 placeholder:text-neutral-600'
+				/>
+			</div>
+
+			<div>
+				<label
+					for='description'
+					class='text-sm text-neutral-400 block mb-1.5'
+					>Description</label
+				>
+				<textarea
+					id='description'
+					rows='2'
+					placeholder="e.g. Kirito & Asuna · one of anime's most iconic voice pairings"
+					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 resize-none placeholder:text-neutral-600'
+					>{pairing.description}</textarea
+				>
+			</div>
+
+			{
+				!isNew && (
+					<div class='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-800'>
+						<div>
+							<div class='text-xs text-neutral-500 mb-1'>
+								Shared anime
+							</div>
+							<div class='text-sm text-neutral-300'>
+								{pairing.sharedCount} (auto-calculated)
+							</div>
+						</div>
+						<div>
+							<div class='text-xs text-neutral-500 mb-1'>
+								Detection
+							</div>
+							<div class='text-sm text-neutral-300'>
+								{pairing.isAutoDetected
+									? 'Auto-detected'
+									: 'Manually created'}
+							</div>
+						</div>
+					</div>
+				)
+			}
+
+			<p id='save-msg' class='text-sm text-amber-400 hidden'></p>
+
+			<div class='flex gap-3 mt-2'>
+				<button
+					type='submit'
+					class='text-sm px-4 py-2.5 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'
+				>
+					{isNew ? 'Create pairing' : 'Save changes'}
+				</button>
+				{
+					!isNew && (
+						<button
+							type='button'
+							class='text-sm px-4 py-2.5 rounded-md border border-red-900 text-red-400 font-medium hover:bg-red-950/30'
+						>
+							Delete pairing
+						</button>
+					)
+				}
+			</div>
+		</form>
+	</div>
+</AdminLayout>
+
+<script>
+	// static placeholder for now — will call POST or PATCH /api/v1/pairings once backend is wired up
+	const form = document.getElementById('pairing-form')
+	const saveMsg = document.getElementById('save-msg')
+
+	form?.addEventListener('submit', (e) => {
+		e.preventDefault()
+		if (saveMsg) {
+			saveMsg.textContent =
+				'Save is not connected yet — backend integration coming soon.'
+			saveMsg.classList.remove('hidden')
+		}
+	})
+</script>

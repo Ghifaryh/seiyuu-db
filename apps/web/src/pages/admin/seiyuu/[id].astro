@@ -1,0 +1,250 @@
+---
+export const prerender = false
+
+import AdminSplitLayout from '../../../layouts/AdminSplitLayout.astro'
+
+const { id } = Astro.params
+
+// mock data for now — will be replaced with a real fetch to /api/v1/seiyuu/:id
+const seiyuu = {
+	nameRomaji: 'Ai Kayano',
+	nameKanji: '茅野愛衣',
+	nameAliases: ['Kayano Ai', '茅野 愛衣'],
+	agency: "I'm Enterprise",
+	birthdate: '1987-09-13',
+	birthplace: 'Osaka',
+	isActive: true,
+	isSinger: true,
+	biography:
+		'Known for her soft and emotional vocal range. Breakthrough role as Meiko "Menma" Honma in AnoHana (2011).',
+	musicSingles: 6,
+	musicAlbums: 3,
+	adminNotes: 'Birthplace confirmed via official agency profile, June 2026.',
+	source: 'anilist:95095',
+}
+---
+
+<AdminSplitLayout
+	title={`Edit ${seiyuu.nameRomaji} — seiyuu.db`}
+	previewUrl={`/seiyuu/${id}`}
+>
+	<div class='px-5 md:px-8 py-6 md:py-8 max-w-2xl'>
+		<a
+			href='/admin/seiyuu'
+			class='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200 mb-5'
+		>
+			<i class='ti ti-arrow-left text-base'></i>
+			Back to seiyuu list
+		</a>
+
+		<div class='flex items-center gap-4 mb-2'>
+			<h1 class='text-2xl font-medium'>{seiyuu.nameRomaji}</h1>
+			<span
+				class='text-xs px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400'
+				>{seiyuu.source}</span
+			>
+		</div>
+		<p class='text-sm text-neutral-500 mb-8'>
+			{seiyuu.nameKanji} · core fields below are synced from AniList and read-only
+		</p>
+
+		<!-- core fields, read-only -->
+		<div
+			class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/30 mb-6'
+		>
+			<div class='flex items-center gap-2 mb-4'>
+				<i class='ti ti-lock text-neutral-500 text-sm'></i>
+				<span class='text-sm font-medium text-neutral-400'
+					>Core data (read-only, from sync)</span
+				>
+			</div>
+			<div class='grid grid-cols-2 gap-4'>
+				<div>
+					<div class='text-xs text-neutral-500 mb-1'>
+						Name (romaji)
+					</div>
+					<div class='text-sm'>{seiyuu.nameRomaji}</div>
+				</div>
+				<div>
+					<div class='text-xs text-neutral-500 mb-1'>
+						Name (kanji)
+					</div>
+					<div class='text-sm'>{seiyuu.nameKanji}</div>
+				</div>
+				<div>
+					<div class='text-xs text-neutral-500 mb-1'>Birthdate</div>
+					<div class='text-sm'>{seiyuu.birthdate}</div>
+				</div>
+				<div>
+					<div class='text-xs text-neutral-500 mb-1'>Birthplace</div>
+					<div class='text-sm'>{seiyuu.birthplace}</div>
+				</div>
+				<div class='col-span-2'>
+					<div class='text-xs text-neutral-500 mb-1'>Aliases</div>
+					<div class='flex gap-1.5 flex-wrap'>
+						{
+							seiyuu.nameAliases.map((alias) => (
+								<span class='text-xs px-2 py-1 rounded-full bg-neutral-800 text-neutral-400'>
+									{alias}
+								</span>
+							))
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- enrichment fields, editable -->
+		<form id='enrichment-form' class='flex flex-col gap-5'>
+			<div class='flex items-center gap-2 mb-1'>
+				<i class='ti ti-edit text-teal-400 text-sm'></i>
+				<span class='text-sm font-medium text-teal-300'
+					>Enrichment (editable)</span
+				>
+			</div>
+
+			<div>
+				<label
+					for='agency'
+					class='text-sm text-neutral-400 block mb-1.5'>Agency</label
+				>
+				<input
+					type='text'
+					id='agency'
+					value={seiyuu.agency}
+					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
+				/>
+			</div>
+
+			<div>
+				<label
+					for='biography'
+					class='text-sm text-neutral-400 block mb-1.5'
+					>Biography</label
+				>
+				<textarea
+					id='biography'
+					rows='4'
+					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 resize-none'
+					>{seiyuu.biography}</textarea
+				>
+			</div>
+
+			<div class='flex gap-4'>
+				<label class='flex items-center gap-2 text-sm cursor-pointer'>
+					<input
+						type='checkbox'
+						id='isActive'
+						checked={seiyuu.isActive}
+						class='w-4 h-4 accent-teal-600'
+					/>
+					Active
+				</label>
+				<label class='flex items-center gap-2 text-sm cursor-pointer'>
+					<input
+						type='checkbox'
+						id='isSinger'
+						checked={seiyuu.isSinger}
+						class='w-4 h-4 accent-teal-600'
+					/>
+					Also a singer
+				</label>
+			</div>
+
+			<div
+				id='music-fields'
+				class={seiyuu.isSinger
+					? 'grid grid-cols-2 gap-4'
+					: 'grid grid-cols-2 gap-4 opacity-40 pointer-events-none'}
+			>
+				<div>
+					<label
+						for='musicSingles'
+						class='text-sm text-neutral-400 block mb-1.5'
+						>Singles count</label
+					>
+					<input
+						type='number'
+						id='musicSingles'
+						value={seiyuu.musicSingles}
+						min='0'
+						class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
+					/>
+				</div>
+				<div>
+					<label
+						for='musicAlbums'
+						class='text-sm text-neutral-400 block mb-1.5'
+						>Albums count</label
+					>
+					<input
+						type='number'
+						id='musicAlbums'
+						value={seiyuu.musicAlbums}
+						min='0'
+						class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
+					/>
+				</div>
+			</div>
+
+			<div>
+				<label
+					for='adminNotes'
+					class='text-sm text-neutral-400 block mb-1.5'
+					>Admin notes (internal only)</label
+				>
+				<textarea
+					id='adminNotes'
+					rows='2'
+					placeholder='Internal notes, not shown to visitors...'
+					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 resize-none placeholder:text-neutral-600'
+					>{seiyuu.adminNotes}</textarea
+				>
+			</div>
+
+			<p id='save-msg' class='text-sm text-amber-400 hidden'></p>
+
+			<div class='flex gap-3 mt-2'>
+				<button
+					type='submit'
+					class='text-sm px-4 py-2.5 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'
+				>
+					Save changes
+				</button>
+				<button
+					type='button'
+					class='text-sm px-4 py-2.5 rounded-md border border-neutral-700 text-white font-medium hover:bg-neutral-900'
+				>
+					Force re-sync from AniList
+				</button>
+			</div>
+		</form>
+	</div>
+</AdminSplitLayout>
+
+<script>
+	// static placeholder for now — will call PATCH /api/v1/seiyuu/:id/enrichment once backend is wired up
+	const form = document.getElementById('enrichment-form')
+	const saveMsg = document.getElementById('save-msg')
+	const isSingerCheckbox = document.getElementById(
+		'isSinger',
+	) as HTMLInputElement | null
+	const musicFields = document.getElementById('music-fields')
+
+	isSingerCheckbox?.addEventListener('change', () => {
+		if (isSingerCheckbox.checked) {
+			musicFields?.classList.remove('opacity-40', 'pointer-events-none')
+		} else {
+			musicFields?.classList.add('opacity-40', 'pointer-events-none')
+		}
+	})
+
+	form?.addEventListener('submit', (e) => {
+		e.preventDefault()
+		if (saveMsg) {
+			saveMsg.textContent =
+				'Save is not connected yet — backend integration coming soon.'
+			saveMsg.classList.remove('hidden')
+		}
+	})
+</script>

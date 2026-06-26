@@ -1,0 +1,83 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro'
+
+// mock data for now
+const stats = [
+	{ label: 'Total seiyuu', value: '1,204', icon: 'ti-users' },
+	{ label: 'Total anime', value: '386', icon: 'ti-movie' },
+	{ label: 'Pairings detected', value: '47', icon: 'ti-heart' },
+	{ label: 'News posts', value: '23', icon: 'ti-news' },
+]
+
+const recentSyncs = [
+	{
+		season: 'Spring 2026',
+		status: 'success',
+		time: '2 hours ago',
+		count: 38,
+	},
+	{ season: 'Winter 2026', status: 'success', time: '1 day ago', count: 41 },
+	{ season: 'Fall 2025', status: 'failed', time: '3 days ago', count: 0 },
+]
+---
+
+<AdminLayout title='Admin overview — seiyuu.db'>
+	<div class='px-8 py-8 max-w-5xl'>
+		<h1 class='text-2xl font-medium mb-1'>Overview</h1>
+		<p class='text-sm text-neutral-400 mb-8'>
+			Quick glance at your database
+		</p>
+
+		<div class='grid grid-cols-2 md:grid-cols-4 gap-4 mb-10'>
+			{
+				stats.map((stat) => (
+					<div class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'>
+						<i
+							class={`ti ${stat.icon} text-teal-400 text-xl mb-2`}
+						/>
+						<div class='text-2xl font-medium'>{stat.value}</div>
+						<div class='text-xs text-neutral-500 mt-1'>
+							{stat.label}
+						</div>
+					</div>
+				))
+			}
+		</div>
+
+		<div class='flex items-center justify-between mb-4'>
+			<h2 class='text-base font-medium'>Recent syncs</h2>
+			<a
+				href='/admin/sync'
+				class='text-sm text-teal-400 hover:text-teal-300'
+				>Manage syncs →</a
+			>
+		</div>
+
+		<div class='border border-neutral-800 rounded-xl overflow-hidden'>
+			{
+				recentSyncs.map((sync, i) => (
+					<div
+						class={`flex items-center gap-4 px-5 py-3.5 ${i !== recentSyncs.length - 1 ? 'border-b border-neutral-800' : ''}`}
+					>
+						{sync.status === 'success' ? (
+							<span class='w-2 h-2 rounded-full bg-teal-400 flex-shrink-0' />
+						) : (
+							<span class='w-2 h-2 rounded-full bg-red-400 flex-shrink-0' />
+						)}
+						<div class='flex-1'>
+							<div class='text-sm font-medium'>{sync.season}</div>
+							<div class='text-xs text-neutral-500 mt-0.5'>
+								{sync.time}
+							</div>
+						</div>
+						<div class='text-sm text-neutral-400'>
+							{sync.status === 'success'
+								? `${sync.count} anime synced`
+								: 'Sync failed'}
+						</div>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</AdminLayout>
