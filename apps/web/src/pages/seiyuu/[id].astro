@@ -1,242 +1,263 @@
 ---
 export const prerender = false
+
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
+import Avatar from '../../components/Avatar.astro'
+import { getInitials, formatSeason } from '../../lib/api'
 
-// mock data for now — will be replaced with a real fetch to /api/v1/seiyuu/:id
-const seiyuu = {
-	nameRomaji: 'Ai Kayano',
-	nameKanji: '茅野 愛衣',
-	nameAlt: 'Kayano Ai',
-	initials: 'AK',
-	birthdate: 'Sep 13, 1987',
-	birthplace: 'Osaka',
-	agency: "I'm Enterprise",
-	isActive: true,
-	isSinger: true,
-	bio: 'Known for her soft and emotional vocal range. Breakthrough role as Meiko "Menma" Honma in AnoHana (2011). Debut year 2010 under I\'m Enterprise.',
-	stats: {
-		totalRoles: 147,
-		thisSeason: 12,
-		debutYear: 2010,
-	},
-	music: {
-		singles: 6,
-		albums: 3,
-	},
+const { id } = Astro.params
+
+interface SeiyuuProfile {
+  seiyuu: {
+    id: string
+    nameRomaji: string
+    nameKanji: string | null
+    nameAliases: string[] | null
+    birthdate: string | null
+    birthplace: string | null
+    agency: string | null
+    isSinger: boolean | null
+    isActive: boolean | null
+    imageUrl: string | null
+  }
+  seiyuu_enrichment: {
+    biography: string | null
+    musicSingles: string[] | null
+    musicAlbums: string[] | null
+  } | null
 }
 
-const allRoles = [
-	{
-		character: 'Emilia',
-		anime: 'Re:Zero Season 3 Part 2',
-		studio: 'White Fox',
-		season: 'Spring 2026',
-		type: 'main',
-	},
-	{
-		character: 'Zenith Greyrat',
-		anime: 'Mushoku Tensei III',
-		studio: 'Studio Bind',
-		season: 'Spring 2026',
-		type: 'supporting',
-	},
-	{
-		character: 'Meiko "Menma" Honma',
-		anime: 'AnoHana: The Movie',
-		studio: 'A-1 Pictures',
-		season: 'Winter 2026',
-		type: 'main',
-	},
-	{
-		character: 'Shiro',
-		anime: 'No Game No Life: Zero II',
-		studio: 'Madhouse',
-		season: 'Winter 2026',
-		type: 'main',
-	},
-	{
-		character: 'Inori Yuzuriha',
-		anime: 'Guilty Crown',
-		studio: 'Production I.G',
-		season: 'Fall 2011',
-		type: 'supporting',
-	},
-]
+interface RoleItem {
+  roleId: string
+  roleType: string | null
+  language: string | null
+  character: { id: string; nameRomaji: string; nameKanji: string | null }
+  anime: {
+    id: string
+    titleRomaji: string
+    titleNative: string | null
+    seasonYear: number | null
+    seasonQuarter: string | null
+    studio: string | null
+    coverUrl: string | null
+  }
+}
 
-// group roles by season for the season-divider UI
-const groupedRoles = allRoles.reduce(
-	(acc: Record<string, typeof allRoles>, role) => {
-		if (!acc[role.season]) acc[role.season] = []
-		acc[role.season].push(role)
-		return acc
-	},
-	{},
-)
+let profile: SeiyuuProfile | null = null
+let roles: RoleItem[] = []
+let error = ''
+
+try {
+  profile = await fetch(`http://localhost:3001/api/v1/seiyuu/${id}`).then(r => r.ok ? r.json() : null)
+  roles = await fetch(`http://localhost:3001/api/v1/seiyuu/${id}/roles`).then(r => r.ok ? r.json() : [])
+} catch {
+  error = 'Failed to load seiyuu data'
+}
+
+const s = profile?.seiyuu
+const enc = profile?.seiyuu_enrichment
+const initials = s ? getInitials(s.nameRomaji) : ''
+const nameAlt = s?.nameAliases?.[0] ?? ''
+
+const groupedRoles = roles.reduce((acc: Record<string, RoleItem[]>, role) => {
+  const season = formatSeason(role.anime.seasonYear, role.anime.seasonQuarter)
+  if (!acc[season]) acc[season] = []
+  acc[season].push(role)
+  return acc
+}, {})
+
+const totalRoles = roles.length
+const debutYears = roles.map(r => r.anime.seasonYear).filter(Boolean).sort()
+const debutYear = debutYears[0]
+
+const now = new Date()
+const month = now.getMonth() + 1
+const currentYear = now.getFullYear()
+let currentQuarter = 'winter'
+if (month >= 4 && month <= 6) currentQuarter = 'spring'
+else if (month >= 7 && month <= 9) currentQuarter = 'summer'
+else if (month >= 10 && month <= 12) currentQuarter = 'fall'
+
+const thisSeasonRoles = roles.filter(r =>
+  r.anime.seasonYear === currentYear && r.anime.seasonQuarter === currentQuarter
+).length
 ---
 
-<BaseLayout title={`${seiyuu.nameRomaji} — seiyuu.db`}>
-	<Nav slot='nav' />
-	<NewsTicker slot='nav' />
+<BaseLayout title={s ? `${s.nameRomaji} — seiyuu.db` : 'Not Found — seiyuu.db'}>
+  <Nav slot='nav' />
+  <NewsTicker slot='nav' />
 
-	<div class='max-w-3xl mx-auto px-6 py-10'>
-		<!-- Profile header -->
-		<div class='flex gap-6 mb-8'>
-			<div
-				class='w-28 h-36 rounded-xl bg-teal-900/60 flex items-center justify-center text-2xl font-medium text-teal-300 border border-neutral-800 flex-shrink-0'
-			>
-				{seiyuu.initials}
-			</div>
-			<div>
-				<h1 class='text-2xl font-medium mb-1'>{seiyuu.nameRomaji}</h1>
-				<p class='text-sm text-neutral-400 mb-3'>
-					{seiyuu.nameKanji} · {seiyuu.nameAlt}
-				</p>
+  {error || !s ? (
+    <div class='max-w-3xl mx-auto px-6 py-10'>
+      <h1 class='text-2xl font-medium'>Seiyuu not found</h1>
+    </div>
+  ) : (
+    <div class='max-w-3xl mx-auto px-6 py-10'>
+      <div class='flex gap-6 mb-8'>
+        <div class='w-28 h-36 rounded-xl bg-teal-900/60 flex items-center justify-center text-2xl font-medium text-teal-300 border border-neutral-800 flex-shrink-0 overflow-hidden'>
+          {s.imageUrl ? (
+            <img src={s.imageUrl} alt={s.nameRomaji} class='w-full h-full object-cover' />
+          ) : (
+            <span>{getInitials(s.nameRomaji)}</span>
+          )}
+        </div>
+        <div>
+          <h1 class='text-2xl font-medium mb-1'>{s.nameRomaji}</h1>
+          <p class='text-sm text-neutral-400 mb-3'>
+            {s.nameKanji}{nameAlt ? ` · ${nameAlt}` : ''}
+          </p>
 
-				<div class='flex flex-wrap gap-2 mb-3'>
-					<span
-						class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'
-					>
-						📅 {seiyuu.birthdate}
-					</span>
-					<span
-						class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'
-					>
-						📍 {seiyuu.birthplace}
-					</span>
-					<span
-						class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'
-					>
-						🏢 {seiyuu.agency}
-					</span>
-					{
-						seiyuu.isActive && (
-							<span class='text-sm px-3 py-1 rounded-full border border-teal-700 bg-teal-900/40 text-teal-300'>
-								✓ Active
-							</span>
-						)
-					}
-				</div>
+          <div class='flex flex-wrap gap-2 mb-3'>
+            {s.birthdate && (
+              <span class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'>📅 {s.birthdate}</span>
+            )}
+            {s.birthplace && (
+              <span class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'>📍 {s.birthplace}</span>
+            )}
+            {s.agency && (
+              <span class='text-sm px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'>🏢 {s.agency}</span>
+            )}
+            {s.isActive && (
+              <span class='text-sm px-3 py-1 rounded-full border border-teal-700 bg-teal-900/40 text-teal-300'>✓ Active</span>
+            )}
+          </div>
 
-				<p class='text-sm text-neutral-400 leading-relaxed'>
-					{seiyuu.bio}
-				</p>
-			</div>
-		</div>
+          {enc?.biography && (
+            <p class='text-sm text-neutral-400 leading-relaxed'>{enc.biography}</p>
+          )}
+        </div>
+      </div>
 
-		<!-- Stats -->
-		<div class='grid grid-cols-3 gap-3 mb-6'>
-			<div class='bg-neutral-900 rounded-lg p-4 text-center'>
-				<div class='text-2xl font-medium text-teal-400'>
-					{seiyuu.stats.totalRoles}
-				</div>
-				<div class='text-xs text-neutral-500 mt-1'>total roles</div>
-			</div>
-			<div class='bg-neutral-900 rounded-lg p-4 text-center'>
-				<div class='text-2xl font-medium text-teal-400'>
-					{seiyuu.stats.thisSeason}
-				</div>
-				<div class='text-xs text-neutral-500 mt-1'>this season</div>
-			</div>
-			<div class='bg-neutral-900 rounded-lg p-4 text-center'>
-				<div class='text-2xl font-medium text-teal-400'>
-					{seiyuu.stats.debutYear}
-				</div>
-				<div class='text-xs text-neutral-500 mt-1'>debut year</div>
-			</div>
-		</div>
+      <div class='grid grid-cols-3 gap-3 mb-6'>
+        <div class='bg-neutral-900 rounded-lg p-4 text-center'>
+          <div class='text-2xl font-medium text-teal-400'>{totalRoles}</div>
+          <div class='text-xs text-neutral-500 mt-1'>total roles</div>
+        </div>
+        <div class='bg-neutral-900 rounded-lg p-4 text-center'>
+          <div class='text-2xl font-medium text-teal-400'>{thisSeasonRoles}</div>
+          <div class='text-xs text-neutral-500 mt-1'>this season</div>
+        </div>
+        <div class='bg-neutral-900 rounded-lg p-4 text-center'>
+          <div class='text-2xl font-medium text-teal-400'>{debutYear ?? '—'}</div>
+          <div class='text-xs text-neutral-500 mt-1'>debut year</div>
+        </div>
+      </div>
 
-		<!-- Singer card -->
-		{
-			seiyuu.isSinger && (
-				<div class='flex items-center gap-3 border border-teal-800/50 bg-teal-950/30 rounded-lg px-4 py-3 mb-8'>
-					<div class='w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0 text-base'>
-						🎵
-					</div>
-					<div class='flex-1'>
-						<div class='text-sm font-medium text-teal-300'>
-							Also active as a singer
-						</div>
-						<div class='text-xs text-teal-400/70 mt-0.5'>
-							Solo discography · anime themes · character songs
-						</div>
-					</div>
-					<div class='flex gap-2'>
-						<span class='text-xs px-2.5 py-1 rounded-full bg-neutral-900 border border-teal-800/50 text-teal-300'>
-							{seiyuu.music.singles} singles
-						</span>
-						<span class='text-xs px-2.5 py-1 rounded-full bg-neutral-900 border border-teal-800/50 text-teal-300'>
-							{seiyuu.music.albums} albums
-						</span>
-					</div>
-				</div>
-			)
-		}
+      {s.isSinger && (
+        <div class='flex items-center gap-3 border border-teal-800/50 bg-teal-950/30 rounded-lg px-4 py-3 mb-8'>
+          <div class='w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0 text-base'>🎵</div>
+          <div class='flex-1'>
+            <div class='text-sm font-medium text-teal-300'>Also active as a singer</div>
+            <div class='text-xs text-teal-400/70 mt-0.5'>Solo discography · anime themes · character songs</div>
+          </div>
+          <div class='flex gap-2'>
+            {enc?.musicSingles && enc.musicSingles.length > 0 && (
+              <span class='text-xs px-2.5 py-1 rounded-full bg-neutral-900 border border-teal-800/50 text-teal-300'>{enc.musicSingles.length} singles</span>
+            )}
+            {enc?.musicAlbums && enc.musicAlbums.length > 0 && (
+              <span class='text-xs px-2.5 py-1 rounded-full bg-neutral-900 border border-teal-800/50 text-teal-300'>{enc.musicAlbums.length} albums</span>
+            )}
+          </div>
+        </div>
+      )}
 
-		<!-- Roles header with tabs -->
-		<div class='flex items-center justify-between mb-4 flex-wrap gap-3'>
-			<div class='flex gap-1'>
-				<button
-					class='text-sm px-3 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'
-					>All roles</button
-				>
-				<button
-					class='text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
-					>Main</button
-				>
-				<button
-					class='text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
-					>Supporting</button
-				>
-			</div>
-			<select
-				class='text-sm px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300'
-			>
-				<option>All time</option>
-				<option>Spring 2026</option>
-				<option>Winter 2026</option>
-			</select>
-		</div>
+      <div class='flex items-center justify-between mb-4 flex-wrap gap-3'>
+        <div class='flex gap-1' id='role-filter'>
+          <button data-filter='all' class='role-filter-btn text-sm px-3 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'>All roles</button>
+          <button data-filter='main' class='role-filter-btn text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Main</button>
+          <button data-filter='supporting' class='role-filter-btn text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Supporting</button>
+        </div>
+        <select id='season-filter' class='text-sm px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300'>
+          <option value='all'>All time</option>
+          {Object.keys(groupedRoles).map(s => <option value={s}>{s}</option>)}
+        </select>
+      </div>
 
-		<!-- Roles list grouped by season -->
-		{
-			Object.entries(groupedRoles).map(([season, roles]) => (
-				<div class='mb-6'>
-					<div class='flex items-center gap-2 text-sm font-medium text-neutral-400 border-b border-neutral-800 pb-2 mb-3'>
-						{season}
-						<span class='text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300'>
-							{roles.length} roles
-						</span>
-					</div>
-					<div class='flex flex-col gap-2'>
-						{roles.map((role) => (
-							<div class='flex items-center gap-4 border border-neutral-800 rounded-lg px-4 py-3 bg-neutral-900/50'>
-								<div class='w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-sm font-medium text-neutral-400 flex-shrink-0'>
-									{role.character.charAt(0)}
-								</div>
-								<div class='flex-1'>
-									<div class='text-sm font-medium'>
-										{role.character}
-									</div>
-									<div class='text-xs text-neutral-500 mt-0.5'>
-										{role.anime} · {role.studio}
-									</div>
-								</div>
-								{role.type === 'main' ? (
-									<span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300 whitespace-nowrap'>
-										Main
-									</span>
-								) : (
-									<span class='text-xs px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 whitespace-nowrap'>
-										Support
-									</span>
-								)}
-							</div>
-						))}
-					</div>
-				</div>
-			))
-		}
-	</div>
+      {Object.entries(groupedRoles).map(([season, items]) => (
+        <div class='season-group mb-6' data-season={season}>
+          <div class='flex items-center gap-2 text-sm font-medium text-neutral-400 border-b border-neutral-800 pb-2 mb-3'>
+            {season}
+            <span class='text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300'>{items.length} roles</span>
+          </div>
+          <div class='flex flex-col gap-2'>
+            {items.map((role) => (
+              <div class='role-item flex items-center gap-4 border border-neutral-800 rounded-lg px-4 py-3 bg-neutral-900/50' data-role-type={role.roleType}>
+                <div class='w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-sm font-medium text-neutral-400 flex-shrink-0'>
+                  {role.character.nameRomaji.charAt(0)}
+                </div>
+                <div class='flex-1'>
+                  <div class='text-sm font-medium'>{role.character.nameRomaji}</div>
+                  <div class='text-xs text-neutral-500 mt-0.5'>
+                    <a href={`/anime/${role.anime.id}`} class='hover:text-teal-400'>{role.anime.titleRomaji}</a>{role.anime.studio ? ` · ${role.anime.studio}` : ''}
+                  </div>
+                </div>
+                {role.roleType === 'main' ? (
+                  <span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300 whitespace-nowrap'>Main</span>
+                ) : (
+                  <span class='text-xs px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 whitespace-nowrap'>Support</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
 </BaseLayout>
+
+<script>
+  let currentType = 'all'
+  let currentSeason = 'all'
+
+  function applyFilters() {
+    const seasonGroups = document.querySelectorAll('.season-group')
+    seasonGroups.forEach((group) => {
+      const season = group.getAttribute('data-season')
+      const roleItems = group.querySelectorAll('.role-item')
+      let visibleCount = 0
+
+      roleItems.forEach((item) => {
+        const roleType = item.getAttribute('data-role-type')
+        const typeMatch = currentType === 'all' || roleType === currentType
+        const seasonMatch = currentSeason === 'all' || season === currentSeason
+
+        if (typeMatch && seasonMatch) {
+          item.classList.remove('hidden')
+          visibleCount++
+        } else {
+          item.classList.add('hidden')
+        }
+      })
+
+      if (visibleCount === 0) {
+        group.classList.add('hidden')
+      } else {
+        group.classList.remove('hidden')
+      }
+    })
+  }
+
+  document.querySelectorAll('.role-filter-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.getAttribute('data-filter')
+      currentType = filter
+
+      document.querySelectorAll('.role-filter-btn').forEach((b) => {
+        b.classList.remove('bg-teal-900/50', 'text-teal-300', 'font-medium')
+        b.classList.add('text-neutral-400')
+      })
+      btn.classList.remove('text-neutral-400')
+      btn.classList.add('bg-teal-900/50', 'text-teal-300', 'font-medium')
+
+      applyFilters()
+    })
+  })
+
+  const seasonSelect = document.getElementById('season-filter')
+  seasonSelect?.addEventListener('change', () => {
+    currentSeason = (seasonSelect as HTMLSelectElement).value
+    applyFilters()
+  })
+</script>

@@ -1,0 +1,33 @@
+---
+interface Props {
+  imageUrl?: string | null
+  name: string
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+}
+
+const { imageUrl, name, size = 'md' } = Astro.props
+
+const sizeClasses: Record<string, string> = {
+  sm: 'w-8 h-8 text-xs',
+  md: 'w-10 h-10 text-sm',
+  lg: 'w-16 h-16 text-lg',
+  xl: 'w-28 h-36 text-2xl',
+}
+
+const initials = name
+  .split(' ')
+  .map(w => w.charAt(0))
+  .join('')
+  .toUpperCase()
+  .slice(0, 2)
+
+const containerClass = `${sizeClasses[size]} rounded-full flex-shrink-0 overflow-hidden`
+---
+
+{imageUrl ? (
+  <img src={imageUrl} alt={name} class={`${containerClass} object-cover border border-neutral-800`} />
+) : (
+  <div class={`${containerClass} bg-teal-900/60 flex items-center justify-center font-medium text-teal-300 border border-neutral-800`}>
+    {initials}
+  </div>
+)}

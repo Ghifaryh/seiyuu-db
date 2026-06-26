@@ -2,185 +2,128 @@
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
-import {
-	getCurrentSeason,
-	getSeasonOptions,
-	formatSeasonLabel,
-	seasonToValue,
-} from '../../lib/season'
+import Avatar from '../../components/Avatar.astro'
+import { getSeasonOptions, formatSeasonLabel, seasonToValue, getCurrentSeason, type Quarter } from '../../lib/season'
 
 const season = getCurrentSeason()
 const seasonOptions = getSeasonOptions(season)
+const currentPage = Number(Astro.url.searchParams.get('page') ?? 1)
+const limit = 12
 
-// mock data for now — will be replaced with a real fetch to /api/v1/season/current
-const animeList = [
-	{
-		id: 'mushoku-tensei-3',
-		title: 'Mushoku Tensei III',
-		studio: 'Studio Bind',
-		status: 'airing',
-		episode: 8,
-		cast: [
-			{
-				character: 'Rudeus Greyrat',
-				seiyuu: 'Yuki Kaji',
-				initials: 'YK',
-			},
-			{
-				character: 'Zenith Greyrat',
-				seiyuu: 'Ai Kayano',
-				initials: 'AK',
-			},
-			{
-				character: 'Paul Greyrat',
-				seiyuu: 'Tomokazu Sugita',
-				initials: 'TS',
-			},
-			{ character: 'Sylphiette', seiyuu: 'Rina Ohta', initials: 'RO' },
-		],
-	},
-	{
-		id: 'rezero-s3p2',
-		title: 'Re:Zero Season 3 Part 2',
-		studio: 'White Fox',
-		status: 'airing',
-		episode: 11,
-		cast: [
-			{
-				character: 'Natsuki Subaru',
-				seiyuu: 'Yusuke Kobayashi',
-				initials: 'YB',
-			},
-			{ character: 'Emilia', seiyuu: 'Ai Kayano', initials: 'AK' },
-			{ character: 'Beatrice', seiyuu: 'Rie Kugimiya', initials: 'RK' },
-		],
-	},
-	{
-		id: 'dandadan-s2',
-		title: 'Dandadan Season 2',
-		studio: 'Science SARU',
-		status: 'upcoming',
-		episode: null,
-		cast: [
-			{
-				character: 'Momo Ayase',
-				seiyuu: 'Shion Wakayama',
-				initials: 'SW',
-			},
-			{ character: 'Narrator', seiyuu: 'Hiroshi Kamiya', initials: 'HK' },
-		],
-	},
-]
+interface CastMember {
+  character: { id: string; nameRomaji: string; nameKanji: string | null; roleType: string | null }
+  seiyuu: { id: string; nameRomaji: string; nameKanji: string | null; imageUrl: string | null }
+  roleType: string | null
+}
+
+interface AnimeCard {
+  id: string
+  titleRomaji: string
+  titleNative: string | null
+  studio: string | null
+  coverUrl: string | null
+  status: string | null
+  cast: CastMember[]
+}
+
+let animeList: AnimeCard[] = []
+let totalPages = 1
+let total = 0
+
+try {
+  const res = await fetch(`http://localhost:3001/api/v1/season/${season.year}/${season.quarter}?page=${currentPage}&limit=${limit}`)
+  if (res.ok) {
+    const result = await res.json() as { data: AnimeCard[]; total: number; totalPages: number }
+    animeList = result.data ?? []
+    totalPages = result.totalPages
+    total = result.total
+  }
+} catch {}
 ---
 
 <BaseLayout title={`${formatSeasonLabel(season)} — seiyuu.db`}>
-	<Nav slot='nav' />
-	<NewsTicker slot='nav' />
+  <Nav slot='nav' />
+  <NewsTicker slot='nav' />
 
-	<div class='max-w-3xl mx-auto px-6 py-10'>
-		<div class='flex items-center justify-between mb-2 flex-wrap gap-3'>
-			<div>
-				<h1 class='text-2xl font-medium'>
-					{formatSeasonLabel(season)}
-				</h1>
-				<p class='text-sm text-neutral-400 mt-1'>
-					Voice cast by airing anime
-				</p>
-			</div>
-			<select
-				id='season-select'
-				class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300'
-			>
-				{
-					seasonOptions.map((opt) => (
-						<option
-							value={seasonToValue(opt)}
-							selected={
-								seasonToValue(opt) === seasonToValue(season)
-							}
-						>
-							{formatSeasonLabel(opt)}
-						</option>
-					))
-				}
-			</select>
-		</div>
+  <div class='max-w-3xl mx-auto px-6 py-10'>
+    <div class='flex items-center justify-between mb-2 flex-wrap gap-3'>
+      <div>
+        <h1 class='text-2xl font-medium'>{formatSeasonLabel(season)}</h1>
+        <p class='text-sm text-neutral-400 mt-1'>{total} anime · {animeList.length} showing</p>
+      </div>
+      <select id='season-select' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300'>
+        {seasonOptions.map((opt) => (
+          <option value={seasonToValue(opt)} selected={seasonToValue(opt) === seasonToValue(season)}>
+            {formatSeasonLabel(opt)}
+          </option>
+        ))}
+      </select>
+    </div>
 
-		<!-- <div class='flex gap-2 my-6'>
-			<button
-				data-view='anime'
-				class='view-btn text-sm px-3.5 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'
-				>By anime</button
-			>
-			<button
-				data-view='seiyuu'
-				class='view-btn text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
-				>By seiyuu</button
-			>
-		</div> -->
+    <div class='flex flex-col gap-4'>
+      {animeList.map((anime) => (
+        <a href={`/anime/${anime.id}`}
+          class='block border border-neutral-800 rounded-xl overflow-hidden hover:border-neutral-600 transition-colors'>
+          <div class='flex items-center gap-3 px-4 py-3 bg-neutral-900/50 border-b border-neutral-800'>
+            {anime.coverUrl ? (
+              <img src={anime.coverUrl} alt='' class='w-9 h-12 rounded-md object-cover flex-shrink-0 bg-neutral-800' />
+            ) : (
+              <div class='w-9 h-12 rounded-md bg-neutral-800 flex items-center justify-center flex-shrink-0'>
+                <i class='ti ti-photo text-neutral-500 text-base' />
+              </div>
+            )}
+            <div class='flex-1'>
+              <div class='text-sm font-medium'>{anime.titleRomaji}</div>
+              <div class='text-xs text-neutral-500 mt-0.5'>{anime.studio}</div>
+            </div>
+            <span class={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap ${anime.status === 'releasing' || anime.status === 'airing' ? 'bg-teal-900/50 text-teal-300' : 'bg-neutral-800 text-neutral-400'}`}>
+              {anime.status === 'releasing' || anime.status === 'airing' ? (
+                <><span class='w-1.5 h-1.5 rounded-full bg-teal-400' />Airing</>
+              ) : (
+                (anime.status ?? 'unknown').charAt(0).toUpperCase() + (anime.status ?? 'unknown').slice(1)
+              )}
+            </span>
+          </div>
 
-		<div class='flex flex-col gap-4'>
-			{
-				animeList.map((anime) => (
-					<a
-						href={`/anime/${anime.id}`}
-						class='block border border-neutral-800 rounded-xl overflow-hidden hover:border-neutral-600 transition-colors'
-					>
-						<div class='flex items-center gap-3 px-4 py-3 bg-neutral-900/50 border-b border-neutral-800'>
-							<div class='w-9 h-12 rounded-md bg-neutral-800 flex items-center justify-center flex-shrink-0'>
-								<i class='ti ti-photo text-neutral-500 text-base' />
-							</div>
-							<div class='flex-1'>
-								<div class='text-sm font-medium'>
-									{anime.title}
-								</div>
-								<div class='text-xs text-neutral-500 mt-0.5'>
-									{anime.studio}
-								</div>
-							</div>
-							{anime.status === 'airing' ? (
-								<span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300 flex items-center gap-1.5 whitespace-nowrap'>
-									<span class='w-1.5 h-1.5 rounded-full bg-teal-400' />
-									Ep {anime.episode} airing
-								</span>
-							) : (
-								<span class='text-xs px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 whitespace-nowrap'>
-									Upcoming
-								</span>
-							)}
-						</div>
+          <div class='flex flex-wrap'>
+            {anime.cast.map((c) => (
+              <div class='flex items-center gap-2.5 px-4 py-3 border-r border-b border-neutral-800 flex-1 min-w-[180px]'>
+                <Avatar name={c.seiyuu.nameRomaji} imageUrl={c.seiyuu.imageUrl} size='sm' />
+                <div class='min-w-0'>
+                  <div class='text-sm font-medium truncate'>{c.seiyuu.nameRomaji}</div>
+                  <div class='text-xs text-neutral-500 truncate'>{c.character.nameRomaji}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </a>
+      ))}
+    </div>
 
-						<div class='flex flex-wrap'>
-							{anime.cast.map((c) => (
-								<div class='flex items-center gap-2.5 px-4 py-3 border-r border-b border-neutral-800 flex-1 min-w-[180px]'>
-									<div class='w-8 h-8 rounded-full bg-teal-900/60 flex items-center justify-center text-xs font-medium text-teal-300 flex-shrink-0'>
-										{c.initials}
-									</div>
-									<div class='min-w-0'>
-										<div class='text-sm font-medium truncate'>
-											{c.seiyuu}
-										</div>
-										<div class='text-xs text-neutral-500 truncate'>
-											{c.character}
-										</div>
-									</div>
-								</div>
-							))}
-						</div>
-					</a>
-				))
-			}
-		</div>
-	</div>
+    {totalPages > 1 && (
+      <div class='flex items-center justify-center gap-3 mt-8'>
+        {currentPage > 1 && (
+          <a href={`/season?page=${currentPage - 1}`} class='text-sm px-4 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-neutral-500'>
+            &larr; Previous
+          </a>
+        )}
+        <span class='text-sm text-neutral-400'>
+          Page {currentPage} of {totalPages}
+        </span>
+        {currentPage < totalPages && (
+          <a href={`/season?page=${currentPage + 1}`} class='text-sm px-4 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-neutral-500'>
+            Next &rarr;
+          </a>
+        )}
+      </div>
+    )}
+  </div>
 </BaseLayout>
 
 <script>
-	const seasonSelect = document.getElementById(
-		'season-select',
-	) as HTMLSelectElement | null
-
-	seasonSelect?.addEventListener('change', () => {
-		const [year, quarter] = seasonSelect.value.split('-')
-		window.location.href = `/season/${year}/${quarter}`
-	})
+  const seasonSelect = document.getElementById('season-select') as HTMLSelectElement | null
+  seasonSelect?.addEventListener('change', () => {
+    const [year, quarter] = seasonSelect.value.split('-')
+    window.location.href = `/season/${year}/${quarter}`
+  })
 </script>

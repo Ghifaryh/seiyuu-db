@@ -23,6 +23,8 @@ const app = new Elysia()
 
 console.log(`API running at ${app.server?.hostname}:${app.server?.port}`)
 
-// run sync after server starts
-runStartupSync().catch(console.error)
-scheduleCron()
+// run sync after server starts (skip in dev with SYNC_ON_STARTUP=false)
+if (process.env.SYNC_ON_STARTUP !== 'false') {
+  runStartupSync().catch(console.error)
+  scheduleCron()
+}

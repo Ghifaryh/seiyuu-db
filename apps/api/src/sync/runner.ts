@@ -54,15 +54,24 @@ export async function syncSeason(year: number, quarter: string) {
       const roleType = edge.role?.toLowerCase() ?? 'supporting'
 
       // upsert character
+      const charSource = `anilist:${media.id}:${charData.id}`
       const [charRecord] = await db
         .insert(character)
         .values({
           animeId: animeRecord.id,
           nameRomaji: charData.name.full ?? 'Unknown',
           nameKanji: charData.name.native ?? null,
-          roleType
+          roleType,
+          source: charSource,
         })
-        .onConflictDoNothing()
+        .onConflictDoUpdate({
+          target: character.source,
+          set: {
+            nameRomaji: charData.name.full ?? 'Unknown',
+            nameKanji: charData.name.native ?? null,
+            roleType,
+          }
+        })
         .returning()
 
       if (!charRecord) continue
@@ -115,6 +124,7 @@ export async function syncSeason(year: number, quarter: string) {
         }
 
         // 4. upsert voice role
+        const vrSource = `anilist:${media.id}:${charData.id}:${va.id}`
         await db
           .insert(voiceRole)
           .values({
@@ -122,9 +132,15 @@ export async function syncSeason(year: number, quarter: string) {
             characterId: charRecord.id,
             animeId: animeRecord.id,
             roleType,
-            language: 'Japanese'
+            language: 'Japanese',
+            source: vrSource,
           })
-          .onConflictDoNothing()
+          .onConflictDoUpdate({
+            target: voiceRole.source,
+            set: {
+              roleType,
+            }
+          })
       }
     }
 

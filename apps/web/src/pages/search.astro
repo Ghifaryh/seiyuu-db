@@ -1,0 +1,79 @@
+---
+export const prerender = false
+
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Avatar from '../components/Avatar.astro'
+import Nav from '../components/layout/Nav.astro'
+import NewsTicker from '../components/layout/NewsTicker.astro'
+
+const query = Astro.url.searchParams.get('q') ?? ''
+
+interface SearchResult {
+  id: string
+  nameRomaji: string
+  nameKanji: string | null
+  nameAliases: string[] | null
+  agency: string | null
+  isActive: boolean | null
+  isSinger: boolean | null
+  imageUrl: string | null
+}
+
+let results: SearchResult[] = []
+let error = ''
+
+if (query) {
+  try {
+    const res = await fetch(`http://localhost:3001/api/v1/search?q=${encodeURIComponent(query)}&limit=24`)
+    if (res.ok) {
+      const data = await res.json() as { query: string; results: SearchResult[] }
+      results = data.results ?? []
+    }
+  } catch {
+    error = 'Search failed'
+  }
+}
+---
+
+<BaseLayout title={`Search: ${query || 'seiyuu.db'}`}>
+  <Nav slot='nav' />
+  <NewsTicker slot='nav' />
+
+  <div class='max-w-3xl mx-auto px-6 py-10'>
+    <form action='/search' method='GET' class='flex items-center gap-3 border-2 border-teal-600 rounded-xl px-5 py-4 mb-8'>
+      <span class='text-teal-500 text-xl'>🔍</span>
+      <input
+        type='text'
+        name='q'
+        value={query}
+        placeholder='茅野愛衣 · Kayano Ai · Ai Kayano...'
+        class='flex-1 bg-transparent outline-none text-base placeholder:text-neutral-500'
+      />
+    </form>
+
+    {query && (
+      <p class='text-sm text-neutral-400 mb-6'>
+        {results.length > 0 ? `${results.length} results for "${query}"` : `No results for "${query}"`}
+      </p>
+    )}
+
+    <div class='flex flex-col gap-3'>
+      {results.map((r) => (
+        <a href={`/seiyuu/${r.id}`}
+          class='flex items-center gap-4 border border-neutral-800 rounded-lg px-4 py-3 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
+          <Avatar name={r.nameRomaji} imageUrl={r.imageUrl} size='md' />
+          <div class='flex-1'>
+            <div class='text-sm font-medium'>{r.nameRomaji}</div>
+            <div class='text-xs text-neutral-500 mt-0.5'>
+              {r.nameKanji}
+              {r.agency ? ` · ${r.agency}` : ''}
+            </div>
+          </div>
+          {r.isSinger && (
+            <span class='text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300 whitespace-nowrap'>🎵 Singer</span>
+          )}
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

@@ -28,7 +28,30 @@ export async function getAllPairings(page = 1, limit = 24) {
     .limit(limit)
     .offset(offset)
 
-  return results
+  // fetch seiyuuB separately to avoid self-join alias complexity
+  const pairingIds = results.map(r => r.pairing.id)
+  const seiyuuBData = pairingIds.length > 0
+    ? await db
+        .select({
+          pairingId: pairing.id,
+          seiyuuB: {
+            id: seiyuu.id,
+            nameRomaji: seiyuu.nameRomaji,
+            nameKanji: seiyuu.nameKanji,
+            imageUrl: seiyuu.imageUrl,
+          }
+        })
+        .from(pairing)
+        .innerJoin(seiyuu, eq(pairing.seiyuuBId, seiyuu.id))
+        .where(or(...pairingIds.map(id => eq(pairing.id, id))))
+    : []
+
+  const seiyuuBMap = new Map(seiyuuBData.map(r => [r.pairingId, r.seiyuuB]))
+
+  return results.map(r => ({
+    ...r,
+    seiyuuB: seiyuuBMap.get(r.pairing.id) ?? null
+  }))
 }
 
 export async function getPairingById(id: string) {
@@ -65,17 +88,64 @@ export async function getPairingById(id: string) {
         id: character.id,
         nameRomaji: character.nameRomaji,
       },
+      roleTypeA: pairingAnime.roleTypeA,
     })
     .from(pairingAnime)
     .innerJoin(anime, eq(pairingAnime.animeId, anime.id))
     .leftJoin(character, eq(pairingAnime.charAId, character.id))
     .where(eq(pairingAnime.pairingId, id))
 
+  // fetch charB for each pairingAnime entry
+  const paIds = sharedAnime.map(sa => {
+    // derive pairingAnime id from anime context — need to re-query
+    return sa
+  })
+  
+  const pairingAnimeRows = await db
+    .select({
+      animeId: pairingAnime.animeId,
+      pairingId: pairingAnime.pairingId,
+      charBId: pairingAnime.charBId,
+      roleTypeB: pairingAnime.roleTypeB,
+    })
+    .from(pairingAnime)
+    .where(eq(pairingAnime.pairingId, id))
+
+  const charBMap = new Map<string, { id: string; nameRomaji: string }>()
+  const roleMap = new Map<string, { roleTypeB: string | null }>()
+  
+  for (const pa of pairingAnimeRows) {
+    roleMap.set(pa.animeId, { roleTypeB: pa.roleTypeB })
+    if (pa.charBId) {
+      if (!charBMap.has(pa.charBId)) {
+        const [charB] = await db
+          .select({
+            id: character.id,
+            nameRomaji: character.nameRomaji,
+          })
+          .from(character)
+          .where(eq(character.id, pa.charBId))
+        if (charB) charBMap.set(pa.charBId, charB)
+      }
+    }
+  }
+
+  const enrichedSharedAnime = sharedAnime.map(sa => {
+    const paData = pairingAnimeRows.find(r => r.animeId === sa.anime.id)
+    const charB = paData?.charBId ? charBMap.get(paData.charBId) : null
+    return {
+      ...sa,
+      charB: charB ?? null,
+      roleTypeA: sa.roleTypeA,
+      roleTypeB: paData?.roleTypeB ?? null,
+    }
+  })
+
   return {
     ...result,
     seiyuuA,
     seiyuuB,
-    sharedAnime
+    sharedAnime: enrichedSharedAnime
   }
 }
 

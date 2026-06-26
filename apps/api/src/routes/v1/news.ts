@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia'
-import { getNews, createNewsPost, deleteNewsPost } from '../../services/news.service'
+import { getNews, getNewsById, createNewsPost, deleteNewsPost } from '../../services/news.service'
 import { adminMiddleware } from '../../middleware/auth.middleware'
 
 const publicNewsRoutes = new Elysia({ prefix: '/news' })
@@ -11,6 +11,16 @@ const publicNewsRoutes = new Elysia({ prefix: '/news' })
       category: t.Optional(t.String()),
       limit: t.Optional(t.String())
     })
+  })
+  .get('/:id', async ({ params, set }) => {
+    const result = await getNewsById(params.id)
+    if (!result) {
+      set.status = 404
+      return { message: 'News post not found' }
+    }
+    return result
+  }, {
+    params: t.Object({ id: t.String() })
   })
 
 const adminNewsRoutes = new Elysia({ prefix: '/news' })

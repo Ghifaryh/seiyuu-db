@@ -6,6 +6,7 @@ import { pairingRoutes } from './pairing'
 import { newsRoutes } from './news'
 import { authRoutes } from './auth'
 import { syncRoutes } from './sync'
+import { animeRoutes } from './anime'
 
 export const v1Routes = new Elysia({ prefix: '/v1' })
   .use(seiyuuRoutes)
@@ -15,3 +16,4 @@ export const v1Routes = new Elysia({ prefix: '/v1' })
   .use(newsRoutes)
   .use(authRoutes)
   .use(syncRoutes)
+  .use(animeRoutes)

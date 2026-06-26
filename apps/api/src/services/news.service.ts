@@ -1,22 +1,71 @@
 import { db } from '../db/client'
-import { newsPost } from '../db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { newsPost, seiyuu } from '../db/schema'
+import { eq, desc, sql, and } from 'drizzle-orm'
+import { or } from 'drizzle-orm'
 
 export async function getNews(category?: string, limit = 20) {
-  const query = db
-    .select()
+  const conditions = category
+    ? [eq(newsPost.category, category)]
+    : []
+
+  const results = await db
+    .select({
+      news: {
+        id: newsPost.id,
+        title: newsPost.title,
+        body: newsPost.body,
+        category: newsPost.category,
+        sourceUrl: newsPost.sourceUrl,
+        publishedAt: newsPost.publishedAt,
+      },
+      seiyuu: {
+        id: seiyuu.id,
+        nameRomaji: seiyuu.nameRomaji,
+        nameKanji: seiyuu.nameKanji,
+        imageUrl: seiyuu.imageUrl,
+      }
+    })
     .from(newsPost)
+    .leftJoin(seiyuu, eq(newsPost.seiyuuId, seiyuu.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(newsPost.publishedAt))
     .limit(limit)
 
-  const results = category
-    ? await db.select().from(newsPost)
-      .where(eq(newsPost.category, category))
-      .orderBy(desc(newsPost.publishedAt))
-      .limit(limit)
-    : await query
+  return results.map(r => ({
+    ...r.news,
+    seiyuu: r.seiyuu ?? null,
+  }))
+}
 
-  return results
+export async function getNewsById(id: string) {
+  const [result] = await db
+    .select({
+      news: {
+        id: newsPost.id,
+        title: newsPost.title,
+        body: newsPost.body,
+        category: newsPost.category,
+        sourceUrl: newsPost.sourceUrl,
+        publishedAt: newsPost.publishedAt,
+        createdBy: newsPost.createdBy,
+      },
+      seiyuu: {
+        id: seiyuu.id,
+        nameRomaji: seiyuu.nameRomaji,
+        nameKanji: seiyuu.nameKanji,
+        imageUrl: seiyuu.imageUrl,
+      }
+    })
+    .from(newsPost)
+    .leftJoin(seiyuu, eq(newsPost.seiyuuId, seiyuu.id))
+    .where(eq(newsPost.id, id))
+
+  if (!result) return null
+
+  return {
+    ...result.news,
+    seiyuu: result.seiyuu ?? null,
+  }
 }
 
 export async function createNewsPost(data: {

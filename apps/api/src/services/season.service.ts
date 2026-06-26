@@ -1,6 +1,6 @@
 import { db } from '../db/client'
 import { anime, voiceRole, character, seiyuu } from '../db/schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, inArray } from 'drizzle-orm'
 
 export async function getSeasonAnime(year: number, quarter: string) {
   const results = await db
@@ -17,7 +17,43 @@ export async function getSeasonAnime(year: number, quarter: string) {
   return results
 }
 
-export async function getSeasonAnimeCast(year: number, quarter: string) {
+export async function getSeasonAnimeCast(year: number, quarter: string, page = 1, limit = 12) {
+  // count total anime in this season
+  const [countResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(anime)
+    .where(
+      and(
+        eq(anime.seasonYear, year),
+        eq(anime.seasonQuarter, quarter)
+      )
+    )
+
+  const total = Number(countResult?.count ?? 0)
+  const totalPages = Math.ceil(total / limit)
+  const offset = (page - 1) * limit
+
+  // get paginated anime IDs
+  const pageAnime = await db
+    .select({ id: anime.id })
+    .from(anime)
+    .where(
+      and(
+        eq(anime.seasonYear, year),
+        eq(anime.seasonQuarter, quarter)
+      )
+    )
+    .orderBy(anime.titleRomaji)
+    .limit(limit)
+    .offset(offset)
+
+  const animeIds = pageAnime.map(a => a.id)
+
+  if (animeIds.length === 0) {
+    return { data: [], page, limit, total, totalPages }
+  }
+
+  // fetch cast only for paginated anime
   const results = await db
     .select({
       anime: {
@@ -46,12 +82,7 @@ export async function getSeasonAnimeCast(year: number, quarter: string) {
     .innerJoin(voiceRole, eq(anime.id, voiceRole.animeId))
     .innerJoin(character, eq(voiceRole.characterId, character.id))
     .innerJoin(seiyuu, eq(voiceRole.seiyuuId, seiyuu.id))
-    .where(
-      and(
-        eq(anime.seasonYear, year),
-        eq(anime.seasonQuarter, quarter)
-      )
-    )
+    .where(inArray(anime.id, animeIds))
 
   // group by anime
   const grouped = results.reduce((acc, row) => {
@@ -70,7 +101,13 @@ export async function getSeasonAnimeCast(year: number, quarter: string) {
     return acc
   }, {} as Record<string, any>)
 
-  return Object.values(grouped)
+  return {
+    data: Object.values(grouped),
+    page,
+    limit,
+    total,
+    totalPages
+  }
 }
 
 export async function getSeasonSeiyuu(year: number, quarter: string) {

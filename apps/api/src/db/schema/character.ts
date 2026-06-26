@@ -7,4 +7,5 @@ export const character = pgTable('character', {
   nameRomaji: text('name_romaji').notNull(),
   nameKanji: text('name_kanji'),
   roleType: text('role_type'), // main | supporting
+  source: text('source').unique(),
 })
