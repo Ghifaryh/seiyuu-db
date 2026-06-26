@@ -1,6 +1,5 @@
 ---
 export const prerender = false
-const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Nav from '../../components/layout/Nav.astro'
@@ -9,6 +8,7 @@ import Avatar from '../../components/Avatar.astro'
 import { getInitials, formatSeason } from '../../lib/api'
 import { API_BASE } from '../../lib/api'
 
+const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
 const { id } = Astro.params
 
 interface SeiyuuProfile {

@@ -5,97 +5,130 @@ import AdminGuard from '../../components/admin/AdminGuard.astro'
 
 <AdminGuard />
 <AdminLayout title='Admin overview — seiyuu.db'>
-  <div class='px-8 py-8 max-w-5xl'>
-    <h1 class='text-2xl font-medium mb-1'>Overview</h1>
-    <p class='text-sm text-neutral-400 mb-8'>Quick glance at your database</p>
+	<div class='px-8 py-8 max-w-5xl'>
+		<h1 class='text-2xl font-medium mb-1'>Overview</h1>
+		<p class='text-sm text-neutral-400 mb-8'>
+			Quick glance at your database
+		</p>
 
-    <div class='grid grid-cols-2 md:grid-cols-4 gap-4 mb-10'>
-      <div class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'>
-        <i class='ti ti-users text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-2xl font-medium' id='stat-seiyuu'>—</div>
-        <div class='text-xs text-neutral-500 mt-1'>Total seiyuu</div>
-      </div>
-      <div class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'>
-        <i class='ti ti-movie text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-2xl font-medium' id='stat-anime'>—</div>
-        <div class='text-xs text-neutral-500 mt-1'>Total anime</div>
-      </div>
-      <div class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'>
-        <i class='ti ti-heart text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-2xl font-medium' id='stat-pairings'>—</div>
-        <div class='text-xs text-neutral-500 mt-1'>Pairings</div>
-      </div>
-      <div class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'>
-        <i class='ti ti-news text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-2xl font-medium' id='stat-news'>—</div>
-        <div class='text-xs text-neutral-500 mt-1'>News posts</div>
-      </div>
-    </div>
+		<div class='grid grid-cols-2 md:grid-cols-4 gap-4 mb-10'>
+			<div
+				class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'
+			>
+				<i class='ti ti-users text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-2xl font-medium' id='stat-seiyuu'>—</div>
+				<div class='text-xs text-neutral-500 mt-1'>Total seiyuu</div>
+			</div>
+			<div
+				class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'
+			>
+				<i class='ti ti-movie text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-2xl font-medium' id='stat-anime'>—</div>
+				<div class='text-xs text-neutral-500 mt-1'>Total anime</div>
+			</div>
+			<div
+				class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'
+			>
+				<i class='ti ti-heart text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-2xl font-medium' id='stat-pairings'>—</div>
+				<div class='text-xs text-neutral-500 mt-1'>Pairings</div>
+			</div>
+			<div
+				class='border border-neutral-800 rounded-xl p-4 bg-neutral-900/50'
+			>
+				<i class='ti ti-news text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-2xl font-medium' id='stat-news'>—</div>
+				<div class='text-xs text-neutral-500 mt-1'>News posts</div>
+			</div>
+		</div>
 
-    <h2 class='text-base font-medium mb-4'>Quick actions</h2>
+		<h2 class='text-base font-medium mb-4'>Quick actions</h2>
 
-    <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-      <a href='/admin/news' class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
-        <i class='ti ti-news text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-sm font-medium mb-1'>Manage news</div>
-        <div class='text-xs text-neutral-500'>Create, edit, delete news posts</div>
-      </a>
-      <a href='/admin/seiyuu' class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
-        <i class='ti ti-users text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-sm font-medium mb-1'>Manage seiyuu</div>
-        <div class='text-xs text-neutral-500'>Edit profiles and enrichment data</div>
-      </a>
-      <a href='/admin/pairings' class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
-        <i class='ti ti-heart text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-sm font-medium mb-1'>Manage pairings</div>
-        <div class='text-xs text-neutral-500'>Create and detect VA duos</div>
-      </a>
-      <a href='/admin/sync' class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
-        <i class='ti ti-refresh text-teal-400 text-xl mb-2 block'></i>
-        <div class='text-sm font-medium mb-1'>Sync data</div>
-        <div class='text-xs text-neutral-500'>Pull data from AniList</div>
-      </a>
-    </div>
-  </div>
+		<div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
+			<a
+				href='/admin/news'
+				class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'
+			>
+				<i class='ti ti-news text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-sm font-medium mb-1'>Manage news</div>
+				<div class='text-xs text-neutral-500'>
+					Create, edit, delete news posts
+				</div>
+			</a>
+			<a
+				href='/admin/seiyuu'
+				class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'
+			>
+				<i class='ti ti-users text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-sm font-medium mb-1'>Manage seiyuu</div>
+				<div class='text-xs text-neutral-500'>
+					Edit profiles and enrichment data
+				</div>
+			</a>
+			<a
+				href='/admin/pairings'
+				class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'
+			>
+				<i class='ti ti-heart text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-sm font-medium mb-1'>Manage pairings</div>
+				<div class='text-xs text-neutral-500'>
+					Create and detect VA duos
+				</div>
+			</a>
+			<a
+				href='/admin/sync'
+				class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'
+			>
+				<i class='ti ti-refresh text-teal-400 text-xl mb-2 block'></i>
+				<div class='text-sm font-medium mb-1'>Sync data</div>
+				<div class='text-xs text-neutral-500'>
+					Pull data from AniList
+				</div>
+			</a>
+		</div>
+	</div>
 </AdminLayout>
 
 <script>
-  const API_BASE = '/api/v1'
+	const API_BASE = '/api/v1'
 
-  async function loadStats() {
-    try {
-      const [seiyuuRes, newsRes, pairRes] = await Promise.all([
-        fetch(`${API_BASE}/seiyuu?limit=1`),
-        fetch(`${API_BASE}/news?limit=1`),
-        fetch(`${API_BASE}/pairings?limit=1`),
-      ])
-      const seiyuuData = await seiyuuRes.json()
-      const newsData = await newsRes.json()
-      const pairData = await pairRes.json()
+	async function loadStats() {
+		try {
+			const [seiyuuRes, newsRes, pairRes] = await Promise.all([
+				fetch(`${API_BASE}/seiyuu?limit=1`),
+				fetch(`${API_BASE}/news?limit=1`),
+				fetch(`${API_BASE}/pairings?limit=1`),
+			])
+			const seiyuuData = await seiyuuRes.json()
+			const newsData = await newsRes.json()
+			const pairData = await pairRes.json()
 
-      document.getElementById('stat-seiyuu')!.textContent = seiyuuData.total ?? '—'
-      document.getElementById('stat-news')!.textContent = Array.isArray(newsData) ? newsData.length : '—'
-      document.getElementById('stat-pairings')!.textContent = Array.isArray(pairData) ? pairData.length : '—'
+			document.getElementById('stat-seiyuu')!.textContent = String(seiyuuData.total ?? '—')
+			document.getElementById('stat-news')!.textContent = String(Array.isArray(newsData) ? newsData.length : '—')
+			document.getElementById('stat-pairings')!.textContent = String(Array.isArray(pairData) ? pairData.length : '—')
 
-      // count anime from season endpoints
-      let animeTotal = 0
-      for (const year of [2026, 2025, 2024]) {
-        for (const q of ['winter', 'spring', 'summer', 'fall']) {
-          try {
-            const r = await fetch(`${API_BASE}/season/${year}/${q}?limit=1`)
-            if (r.ok) {
-              const d = await r.json()
-              if (d.total) animeTotal += d.total
-            }
-          } catch {}
-          await new Promise(r => setTimeout(r, 100))
-        }
-      }
-      document.getElementById('stat-anime')!.textContent = animeTotal > 0 ? String(animeTotal) : '—'
-    } catch {
-      // silently fail
-    }
-  }
+			// count anime from season endpoints
+			let animeTotal = 0
+			for (const year of [2026, 2025, 2024]) {
+				for (const q of ['winter', 'spring', 'summer', 'fall']) {
+					try {
+						const r = await fetch(
+							`${API_BASE}/season/${year}/${q}?limit=1`,
+						)
+						if (r.ok) {
+							const d = await r.json()
+							if (d.total) animeTotal += d.total
+						}
+					} catch {}
+					await new Promise((r) => setTimeout(r, 100))
+				}
+			}
+			document.getElementById('stat-anime')!.textContent =
+				animeTotal > 0 ? String(animeTotal) : '—'
+		} catch {
+			// silently fail
+		}
+	}
 
-  loadStats()
+	loadStats()
 </script>
