@@ -16,7 +16,7 @@ try {
   const res = await fetch('http://localhost:3001/api/v1/season/current/seiyuu')
   if (res.ok) {
     const data = await res.json() as { data: SeiyuuCard[] }
-    popular = data.data?.slice(0, 10) ?? []
+    popular = data.data?.slice(0, 9) ?? []
   }
 } catch {
   // API not available, keep empty
