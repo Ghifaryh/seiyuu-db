@@ -1,0 +1,117 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Nav from '../../components/layout/Nav.astro'
+import NewsTicker from '../../components/layout/NewsTicker.astro'
+
+// mock data for now — will be replaced with a real fetch to /api/v1/pairings
+const pairings = [
+	{
+		id: 'sao-duo',
+		nameA: 'Yoshitsugu Matsuoka',
+		nameB: 'Ai Kayano',
+		initialsA: 'YM',
+		initialsB: 'AK',
+		pairName: 'The SAO Duo',
+		sharedCount: 8,
+	},
+	{
+		id: 'kamiya-yuuki',
+		nameA: 'Hiroshi Kamiya',
+		nameB: 'Aoi Yuuki',
+		initialsA: 'HK',
+		initialsB: 'AY',
+		pairName: 'Kamiya & Yuuki',
+		sharedCount: 11,
+	},
+	{
+		id: 'hanazawa-miyano',
+		nameA: 'Kana Hanazawa',
+		nameB: 'Mamoru Miyano',
+		initialsA: 'KH',
+		initialsB: 'MM',
+		pairName: 'Hanazawa & Miyano',
+		sharedCount: 7,
+	},
+	{
+		id: 'kaji-hanazawa',
+		nameA: 'Yuki Kaji',
+		nameB: 'Kana Hanazawa',
+		initialsA: 'YK',
+		initialsB: 'KH',
+		pairName: 'Kaji & Hanazawa',
+		sharedCount: 9,
+	},
+	{
+		id: 'sugita-uchida',
+		nameA: 'Tomokazu Sugita',
+		nameB: 'Yuuya Uchida',
+		initialsA: 'TS',
+		initialsB: 'YU',
+		pairName: 'Sugita & Uchida',
+		sharedCount: 6,
+	},
+	{
+		id: 'kayano-irino',
+		nameA: 'Ai Kayano',
+		nameB: 'Miyu Irino',
+		initialsA: 'AK',
+		initialsB: 'MI',
+		pairName: 'Kayano & Irino',
+		sharedCount: 5,
+	},
+]
+---
+
+<BaseLayout title='Pairings — seiyuu.db'>
+	<Nav slot='nav' />
+	<NewsTicker slot='nav' />
+
+	<div class='max-w-4xl mx-auto px-6 py-10'>
+		<div class='mb-8'>
+			<h1 class='text-2xl font-medium mb-2'>Dynamic duos</h1>
+			<p class='text-sm text-neutral-400'>
+				Voice actor pairs who've worked together across multiple anime
+			</p>
+		</div>
+
+		<div class='flex gap-2 mb-6'>
+			<button
+				class='text-sm px-3.5 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'
+				>Most shared</button
+			>
+			<button
+				class='text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
+				>Most recent</button
+			>
+		</div>
+
+		<div class='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+			{
+				pairings.map((pair) => (
+					<a
+						href={`/pairings/${pair.id}`}
+						class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'
+					>
+						<div class='flex items-center mb-4'>
+							<div class='w-11 h-11 rounded-full bg-teal-900/60 flex items-center justify-center text-sm font-medium text-teal-300 border-2 border-neutral-950'>
+								{pair.initialsA}
+							</div>
+							<div class='w-11 h-11 rounded-full bg-purple-900/60 flex items-center justify-center text-sm font-medium text-purple-300 border-2 border-neutral-950 -ml-3'>
+								{pair.initialsB}
+							</div>
+						</div>
+						<div class='text-base font-medium mb-1'>
+							{pair.pairName}
+						</div>
+						<div class='text-sm text-neutral-500 mb-3'>
+							{pair.nameA} & {pair.nameB}
+						</div>
+						<span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300'>
+							{pair.sharedCount} shared anime
+						</span>
+					</a>
+				))
+			}
+		</div>
+	</div>
+</BaseLayout>

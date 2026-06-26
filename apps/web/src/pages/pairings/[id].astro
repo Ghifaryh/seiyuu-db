@@ -1,0 +1,198 @@
+---
+export const prerender = false
+
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Nav from '../../components/layout/Nav.astro'
+import NewsTicker from '../../components/layout/NewsTicker.astro'
+
+// mock data for now — will be replaced with a real fetch to /api/v1/pairings/:id
+const pairing = {
+	pairName: 'The SAO Duo',
+	subtitle: "Kirito & Asuna · one of anime's most iconic voice pairings",
+	seiyuuA: {
+		name: 'Yoshitsugu Matsuoka',
+		nameJp: '松岡禎丞',
+		initials: 'YM',
+	},
+	seiyuuB: { name: 'Ai Kayano', nameJp: '茅野愛衣', initials: 'AK' },
+	stats: { sharedCount: 8, firstYear: 2012, recentYear: 2026 },
+	tags: ['Iconic pairing', 'Action', 'Romance', 'Isekai', '2010s'],
+	sharedAnime: [
+		{
+			title: 'Sword Art Online',
+			year: 2012,
+			studio: 'A-1 Pictures',
+			charA: { name: 'Kirito', role: 'main' },
+			charB: { name: 'Asuna', role: 'main' },
+		},
+		{
+			title: 'No Game No Life',
+			year: 2014,
+			studio: 'Madhouse',
+			charA: { name: 'Sora', role: 'main' },
+			charB: { name: 'Shiro', role: 'main' },
+		},
+		{
+			title: 'The Pet Girl of Sakurasou',
+			year: 2012,
+			studio: 'J.C. Staff',
+			charA: { name: 'Sorata Kanda', role: 'main' },
+			charB: { name: 'Mashiro Shiina', role: 'main' },
+		},
+		{
+			title: 'Sword Art Online: Alicization',
+			year: 2018,
+			studio: 'A-1 Pictures',
+			charA: { name: 'Kirito', role: 'main' },
+			charB: { name: 'Asuna', role: 'supporting' },
+		},
+	],
+}
+---
+
+<BaseLayout title={`${pairing.pairName} — seiyuu.db`}>
+	<Nav slot='nav' />
+	<NewsTicker slot='nav' />
+
+	<div class='max-w-3xl mx-auto px-6 py-10'>
+		<!-- duo hero -->
+		<div
+			class='border border-neutral-800 rounded-xl p-8 bg-neutral-900/50 mb-8'
+		>
+			<div class='flex items-center justify-center gap-0 mb-6'>
+				<div
+					class='w-20 h-20 rounded-xl bg-teal-900/60 flex items-center justify-center text-lg font-medium text-teal-300 border border-neutral-800'
+				>
+					{pairing.seiyuuA.initials}
+				</div>
+				<div class='flex flex-col items-center gap-1 px-5'>
+					<div class='w-px h-5 bg-neutral-700'></div>
+					<div
+						class='w-9 h-9 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center'
+					>
+						<i class='ti ti-link text-neutral-400 text-base'></i>
+					</div>
+					<div class='w-px h-5 bg-neutral-700'></div>
+				</div>
+				<div
+					class='w-20 h-20 rounded-xl bg-purple-900/60 flex items-center justify-center text-lg font-medium text-purple-300 border border-neutral-800'
+				>
+					{pairing.seiyuuB.initials}
+				</div>
+			</div>
+
+			<div class='flex items-center justify-center gap-6 mb-6'>
+				<div class='text-center'>
+					<div class='text-base font-medium'>
+						{pairing.seiyuuA.name}
+					</div>
+					<div class='text-xs text-neutral-500 mt-1'>
+						{pairing.seiyuuA.nameJp}
+					</div>
+				</div>
+				<span class='text-xl text-neutral-600'>&</span>
+				<div class='text-center'>
+					<div class='text-base font-medium'>
+						{pairing.seiyuuB.name}
+					</div>
+					<div class='text-xs text-neutral-500 mt-1'>
+						{pairing.seiyuuB.nameJp}
+					</div>
+				</div>
+			</div>
+
+			<div class='text-center mb-6'>
+				<h1 class='text-xl font-medium mb-1'>{pairing.pairName}</h1>
+				<p class='text-sm text-neutral-400'>{pairing.subtitle}</p>
+			</div>
+
+			<div class='grid grid-cols-3 gap-3 mb-6'>
+				<div class='bg-neutral-900 rounded-lg p-3 text-center'>
+					<div class='text-xl font-medium text-teal-400'>
+						{pairing.stats.sharedCount}
+					</div>
+					<div class='text-xs text-neutral-500 mt-1'>
+						shared anime
+					</div>
+				</div>
+				<div class='bg-neutral-900 rounded-lg p-3 text-center'>
+					<div class='text-xl font-medium text-teal-400'>
+						{pairing.stats.firstYear}
+					</div>
+					<div class='text-xs text-neutral-500 mt-1'>
+						first together
+					</div>
+				</div>
+				<div class='bg-neutral-900 rounded-lg p-3 text-center'>
+					<div class='text-xl font-medium text-teal-400'>
+						{pairing.stats.recentYear}
+					</div>
+					<div class='text-xs text-neutral-500 mt-1'>most recent</div>
+				</div>
+			</div>
+
+			<div class='flex gap-2 flex-wrap justify-center'>
+				{
+					pairing.tags.map((tag) => (
+						<span class='text-xs px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300'>
+							{tag}
+						</span>
+					))
+				}
+			</div>
+		</div>
+
+		<!-- shared anime -->
+		<p
+			class='text-sm font-medium uppercase tracking-wide text-neutral-500 mb-4'
+		>
+			Shared anime & roles
+		</p>
+
+		<div class='flex flex-col gap-3'>
+			{
+				pairing.sharedAnime.map((anime) => (
+					<div class='border border-neutral-800 rounded-lg overflow-hidden'>
+						<div class='flex items-center gap-3 px-4 py-3 bg-neutral-900 border-b border-neutral-800'>
+							<span class='w-2 h-2 rounded-full bg-teal-500 flex-shrink-0' />
+							<span class='text-sm font-medium flex-1'>
+								{anime.title}
+							</span>
+							<span class='text-xs text-neutral-500'>
+								{anime.year} · {anime.studio}
+							</span>
+						</div>
+						<div class='flex'>
+							<div class='flex items-center gap-3 px-4 py-3 flex-1 border-r border-neutral-800'>
+								<div class='w-8 h-8 rounded-full bg-teal-900/60 flex items-center justify-center text-xs font-medium text-teal-300 flex-shrink-0'>
+									{anime.charA.name.charAt(0)}
+								</div>
+								<div>
+									<div class='text-sm font-medium'>
+										{anime.charA.name}
+									</div>
+									<div class='text-xs text-neutral-500'>
+										{pairing.seiyuuA.name}
+									</div>
+								</div>
+							</div>
+							<div class='flex items-center gap-3 px-4 py-3 flex-1'>
+								<div class='w-8 h-8 rounded-full bg-purple-900/60 flex items-center justify-center text-xs font-medium text-purple-300 flex-shrink-0'>
+									{anime.charB.name.charAt(0)}
+								</div>
+								<div>
+									<div class='text-sm font-medium'>
+										{anime.charB.name}
+									</div>
+									<div class='text-xs text-neutral-500'>
+										{pairing.seiyuuB.name}
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</BaseLayout>

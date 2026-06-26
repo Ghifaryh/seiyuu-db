@@ -1,0 +1,158 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Nav from '../../components/layout/Nav.astro'
+import NewsTicker from '../../components/layout/NewsTicker.astro'
+
+const newsPosts = [
+	{
+		id: '1',
+		title: 'Kana Hanazawa cast as lead in upcoming Spring 2026 original anime',
+		body: 'The voice actress known for her emotionally nuanced performances will headline a new original series set to premiere this spring, marking her first lead role in two years.',
+		category: 'roles',
+		seiyuuName: 'Kana Hanazawa',
+		initials: 'KH',
+		publishedAt: '2026-06-20',
+	},
+	{
+		id: '2',
+		title: 'Yoshitsugu Matsuoka renews contract with Pro-Fit',
+		body: 'After nearly a decade with the agency, Matsuoka has signed a new multi-year contract, citing continued support for his career growth.',
+		category: 'agency',
+		seiyuuName: 'Yoshitsugu Matsuoka',
+		initials: 'YM',
+		publishedAt: '2026-06-18',
+	},
+	{
+		id: '3',
+		title: 'Aoi Yuuki announced for lead role in Summer 2026 NHK series',
+		body: 'NHK has confirmed Yuuki will voice the protagonist in their upcoming adaptation, her first major NHK production since 2022.',
+		category: 'roles',
+		seiyuuName: 'Aoi Yuuki',
+		initials: 'AY',
+		publishedAt: '2026-06-15',
+	},
+	{
+		id: '4',
+		title: 'Hiroshi Kamiya joins new agency following contract renewal',
+		body: 'Industry sources confirm the veteran seiyuu has transitioned to a new talent agency, with an official statement expected later this month.',
+		category: 'agency',
+		seiyuuName: 'Hiroshi Kamiya',
+		initials: 'HK',
+		publishedAt: '2026-06-10',
+	},
+]
+
+const categoryStyles: Record<string, string> = {
+	roles: 'bg-teal-900/50 text-teal-300',
+	agency: 'bg-purple-900/50 text-purple-300',
+}
+---
+
+<BaseLayout title='News — seiyuu.db'>
+	<Nav slot='nav' />
+	<NewsTicker slot='nav' />
+
+	<div class='max-w-3xl mx-auto px-6 py-10'>
+		<div class='mb-8'>
+			<h1 class='text-2xl font-medium mb-2'>News</h1>
+			<p class='text-sm text-neutral-400'>
+				Role announcements and agency news from across the industry
+			</p>
+		</div>
+
+		<div class='flex gap-2 mb-6'>
+			<button
+				data-filter='all'
+				class='filter-btn text-sm px-3.5 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'
+				>All</button
+			>
+			<button
+				data-filter='roles'
+				class='filter-btn text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
+				>Roles</button
+			>
+			<button
+				data-filter='agency'
+				class='filter-btn text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'
+				>Agency</button
+			>
+		</div>
+
+		<div id='news-list' class='flex flex-col gap-4'>
+			{
+				newsPosts.map((post) => (
+					<a
+						href={`/news/${post.id}`}
+						data-category={post.category}
+						class='news-item block border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'
+					>
+						<div class='flex items-start gap-4'>
+							<div class='w-11 h-11 rounded-full bg-teal-900/60 flex items-center justify-center text-sm font-medium text-teal-300 flex-shrink-0'>
+								{post.initials}
+							</div>
+							<div class='flex-1'>
+								<div class='flex items-center gap-2 mb-2'>
+									<span
+										class={`text-xs px-2.5 py-0.5 rounded-full font-medium ${categoryStyles[post.category]}`}
+									>
+										{post.category === 'roles'
+											? 'Role announcement'
+											: 'Agency news'}
+									</span>
+									<span class='text-xs text-neutral-500'>
+										{new Date(
+											post.publishedAt,
+										).toLocaleDateString('en-US', {
+											month: 'short',
+											day: 'numeric',
+											year: 'numeric',
+										})}
+									</span>
+								</div>
+								<h2 class='text-base font-medium mb-2 leading-snug'>
+									{post.title}
+								</h2>
+								<p class='text-sm text-neutral-400 leading-relaxed'>
+									{post.body}
+								</p>
+							</div>
+						</div>
+					</a>
+				))
+			}
+		</div>
+	</div>
+</BaseLayout>
+
+<script>
+	const filterButtons = document.querySelectorAll('.filter-btn')
+	const newsItems = document.querySelectorAll('.news-item')
+
+	filterButtons.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const filter = btn.getAttribute('data-filter')
+
+			// update button styles
+			filterButtons.forEach((b) => {
+				b.classList.remove(
+					'bg-teal-900/50',
+					'text-teal-300',
+					'font-medium',
+				)
+				b.classList.add('text-neutral-400')
+			})
+			btn.classList.remove('text-neutral-400')
+			btn.classList.add('bg-teal-900/50', 'text-teal-300', 'font-medium')
+
+			// show/hide news items
+			newsItems.forEach((item) => {
+				const category = item.getAttribute('data-category')
+				if (filter === 'all' || category === filter) {
+					item.classList.remove('hidden')
+				} else {
+					item.classList.add('hidden')
+				}
+			})
+		})
+	})
+</script>

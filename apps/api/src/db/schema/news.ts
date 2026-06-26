@@ -8,6 +8,7 @@ export const newsPost = pgTable('news_post', {
   body: text('body').notNull(),
   category: text('category'), // roles | agency
   seiyuuId: uuid('seiyuu_id').references(() => seiyuu.id),
+  sourceUrl: text('source_url'),
   createdBy: uuid('created_by').references(() => appUser.id),
   publishedAt: timestamp('published_at').defaultNow()
 })

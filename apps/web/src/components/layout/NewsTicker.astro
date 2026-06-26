@@ -9,27 +9,71 @@ const newsItems = [
 		icon: '🎤',
 		text: 'Aoi Yuuki announced for lead role in Summer 2026 NHK series',
 	},
+	{
+		icon: '🏢',
+		text: 'Hiroshi Kamiya joins new agency following contract renewal',
+	},
 ]
 ---
 
-<div
-	class='bg-teal-950/40 border-b border-teal-800/40 px-6 py-2 flex items-center gap-4 overflow-hidden'
+<a
+	href='/news'
+	class='block bg-teal-950/40 border-b border-teal-800/40 px-6 py-2 overflow-hidden hover:bg-teal-950/60 transition-colors'
 >
-	<span
-		class='text-xs font-medium px-2.5 py-1 rounded-full bg-teal-600 text-teal-50 whitespace-nowrap flex-shrink-0'
-	>
-		News
-	</span>
-	<div class='flex gap-8 overflow-hidden'>
-		{
-			newsItems.map((item, i) => (
-				<span class='text-sm text-teal-200 whitespace-nowrap flex items-center gap-2'>
-					<span>{item.icon}</span> {item.text}
-					{i < newsItems.length - 1 && (
-						<span class='text-teal-700 ml-6'>·</span>
-					)}
-				</span>
-			))
-		}
+	<div class='flex items-center gap-4'>
+		<span
+			class='text-xs font-medium px-2.5 py-1 rounded-full bg-teal-600 text-teal-50 whitespace-nowrap flex-shrink-0'
+		>
+			News
+		</span>
+
+		<div class='ticker-track flex-1 overflow-hidden'>
+			<div class='ticker-content flex gap-10 whitespace-nowrap'>
+				{
+					newsItems.map((item) => (
+						<span class='text-sm text-teal-200 flex items-center gap-2'>
+							<span>{item.icon}</span> {item.text}
+						</span>
+					))
+				}
+				<!-- duplicate set for seamless loop -->
+				{
+					newsItems.map((item) => (
+						<span class='text-sm text-teal-200 flex items-center gap-2'>
+							<span>{item.icon}</span> {item.text}
+						</span>
+					))
+				}
+			</div>
+		</div>
 	</div>
-</div>
+</a>
+
+<style>
+	.ticker-track {
+		mask-image: linear-gradient(to right, black 95%, transparent 100%);
+	}
+
+	.ticker-content {
+		animation: ticker-scroll 30s linear infinite;
+	}
+
+	.ticker-content:hover {
+		animation-play-state: paused;
+	}
+
+	@media (max-width: 640px) {
+		.ticker-content {
+			animation-duration: 3s;
+		}
+	}
+
+	@keyframes ticker-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+</style>
