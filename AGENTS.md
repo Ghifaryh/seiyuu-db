@@ -77,4 +77,14 @@
 
 - Astro v6 prod build requires `@astrojs/node` adapter (has Bun compatibility issues — dev mode works fine)
 - No test infrastructure, no linter, no typecheck scripts exist
-- `veriformModuleSyntax: true` on API — use `type` keyword explicitly for type-only imports
+- `verbatimModuleSyntax: true` on API — use `type` keyword explicitly for type-only imports
+
+## Deployment
+
+- `apps/api/Dockerfile` — Bun-based production image
+- `apps/web/Dockerfile` — Node-based with Astro SSR adapter (Bun has adapter compat issues)
+- `docker-compose.prod.yml` — production stack: MeiliSearch + API + Web
+- `.github/workflows/deploy.yml` — builds both images on push to main, pushes to GHCR
+- GHCR images: `ghcr.io/<owner>/seiyuu-db-api:latest` and `ghcr.io/<owner>/seiyuu-db-web:latest`
+- API env vars needed in production: `DATABASE_URL`, `MEILI_MASTER_KEY`, `JWT_SECRET`
+- PostgreSQL is NOT containerized — runs on the user's infrastructure with the same connection string

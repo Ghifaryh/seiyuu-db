@@ -1,0 +1,45 @@
+# Portainer Stack — seiyuu.db
+# Paste this into Portainer > Stacks > Add stack > Web editor
+# Set the required environment variables below
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: production
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+
+  api:
+    image: ghcr.io/ghifaryh/seiyuu-db-api:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3001
+      SYNC_ON_STARTUP: "false"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - meilisearch
+
+  web:
+    image: ghcr.io/ghifaryh/seiyuu-db-web:latest
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4321
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3001}
+    ports:
+      - "4321:4321"
+    depends_on:
+      - api
+
+volumes:
+  meili_data:
