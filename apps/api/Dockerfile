@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json bun.lock tsconfig.base.json tsconfig.json ./
 COPY apps/api ./apps/api
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 ENV PORT=3001
 ENV NODE_ENV=production

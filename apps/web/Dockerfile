@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json bun.lock tsconfig.base.json ./
 COPY apps/web ./apps/web
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 WORKDIR /app/apps/web
 RUN bun run build
