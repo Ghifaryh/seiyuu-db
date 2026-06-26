@@ -1,5 +1,6 @@
 import { Elysia, t } from 'elysia'
-import { getAllSeiyuu, getSeiyuuById, getSeiyuuRoles } from '../../services/seiyuu.service'
+import { getAllSeiyuu, getSeiyuuById, getSeiyuuRoles, updateSeiyuu } from '../../services/seiyuu.service'
+import { adminMiddleware } from '../../middleware/auth.middleware'
 
 export const seiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
 
@@ -30,6 +31,45 @@ export const seiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
   })
 
   // GET /api/seiyuu/:id/roles
+  .get('/:id/roles', async ({ params, query }) => {
+    return await getSeiyuuRoles(
+      params.id,
+      query.year ? Number(query.year) : undefined,
+      query.quarter,
+      query.type
+    )
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    query: t.Object({
+      year: t.Optional(t.String()),
+      quarter: t.Optional(t.String()),
+      type: t.Optional(t.String())
+    })
+  })
+
+export const adminSeiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
+  .use(adminMiddleware)
+  .patch('/:id', async ({ params, body, set }) => {
+    const result = await updateSeiyuu(params.id, body)
+    if (!result) {
+      set.status = 404
+      return { message: 'Seiyuu not found' }
+    }
+    return result
+  }, {
+    params: t.Object({ id: t.String() }),
+    body: t.Object({
+      agency: t.Optional(t.Nullable(t.String())),
+      isActive: t.Optional(t.Boolean()),
+      isSinger: t.Optional(t.Boolean()),
+      biography: t.Optional(t.Nullable(t.String())),
+      musicSingles: t.Optional(t.Nullable(t.Array(t.String()))),
+      musicAlbums: t.Optional(t.Nullable(t.Array(t.String()))),
+      adminNotes: t.Optional(t.Nullable(t.String())),
+    })
+  })
   .get('/:id/roles', async ({ params, query }) => {
     return await getSeiyuuRoles(
       params.id,

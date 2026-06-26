@@ -1,222 +1,213 @@
 ---
 export const prerender = false
 
-import AdminLayout from '../../../layouts/AdminLayout.astro'
+import AdminSplitLayout from '../../../layouts/AdminSplitLayout.astro'
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
 
 const { id } = Astro.params
 const isNew = id === 'new'
-
-// mock data for now — will be replaced with a real fetch to /api/v1/pairings/:id
-const pairing = isNew
-	? {
-			seiyuuAId: '',
-			seiyuuBId: '',
-			pairName: '',
-			description: '',
-			sharedCount: 0,
-			isAutoDetected: false,
-		}
-	: {
-			seiyuuAId: 'yoshitsugu-matsuoka',
-			seiyuuBId: 'ai-kayano',
-			nameA: 'Yoshitsugu Matsuoka',
-			nameB: 'Ai Kayano',
-			pairName: 'The SAO Duo',
-			description:
-				"Kirito & Asuna · one of anime's most iconic voice pairings",
-			sharedCount: 8,
-			isAutoDetected: false,
-		}
-
-// mock list for the seiyuu picker dropdowns
-const allSeiyuu = [
-	{ id: 'ai-kayano', name: 'Ai Kayano' },
-	{ id: 'hiroshi-kamiya', name: 'Hiroshi Kamiya' },
-	{ id: 'kana-hanazawa', name: 'Kana Hanazawa' },
-	{ id: 'yuki-kaji', name: 'Yuki Kaji' },
-	{ id: 'aoi-yuuki', name: 'Aoi Yuuki' },
-	{ id: 'yoshitsugu-matsuoka', name: 'Yoshitsugu Matsuoka' },
-]
 ---
 
-<AdminLayout title={`${isNew ? 'New pairing' : pairing.pairName} — seiyuu.db`}>
-	<div class='px-5 md:px-8 py-6 md:py-8 max-w-2xl'>
-		<a
-			href='/admin/pairings'
-			class='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200 mb-5'
-		>
-			<i class='ti ti-arrow-left text-base'></i>
-			Back to pairings
-		</a>
+<AdminGuard />
+<AdminSplitLayout title={isNew ? 'New pairing — seiyuu.db' : 'Edit pairing — seiyuu.db'} previewUrl={isNew ? undefined : `/pairings/${id}`}>
+  <div class='px-5 md:px-8 py-6 md:py-8 max-w-2xl'>
+    <a href='/admin/pairings' class='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200 mb-5'>
+      <i class='ti ti-arrow-left text-base'></i> Back to pairings
+    </a>
 
-		<h1 class='text-2xl font-medium mb-1'>
-			{isNew ? 'New pairing' : 'Edit pairing'}
-		</h1>
-		<p class='text-sm text-neutral-500 mb-8'>
-			{
-				isNew
-					? 'Manually link two seiyuu as a recognized duo'
-					: 'Update the name or description for this pairing'
-			}
-		</p>
-
-		{
-			!isNew && pairing.isAutoDetected !== undefined && (
-				<div class='flex items-center gap-2 mb-6 text-sm px-4 py-2.5 rounded-md bg-neutral-900/50 border border-neutral-800 text-neutral-400'>
-					<i class='ti ti-info-circle text-base flex-shrink-0' />
-					This pairing was auto-detected from shared anime
-					appearances. Naming it below makes it a permanent named
-					pairing.
-				</div>
-			)
-		}
-
-		<form id='pairing-form' class='flex flex-col gap-5'>
-			<div class='grid grid-cols-2 gap-4'>
-				<div>
-					<label
-						for='seiyuuA'
-						class='text-sm text-neutral-400 block mb-1.5'
-						>Seiyuu A</label
-					>
-					<select
-						id='seiyuuA'
-						disabled={!isNew}
-						class={isNew
-							? 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
-							: 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-800 bg-neutral-900/50 text-neutral-400'}
-					>
-						{isNew && <option value=''>Select seiyuu...</option>}
-						{
-							allSeiyuu.map((s) => (
-								<option
-									value={s.id}
-									selected={s.id === pairing.seiyuuAId}
-								>
-									{s.name}
-								</option>
-							))
-						}
-					</select>
-				</div>
-				<div>
-					<label
-						for='seiyuuB'
-						class='text-sm text-neutral-400 block mb-1.5'
-						>Seiyuu B</label
-					>
-					<select
-						id='seiyuuB'
-						disabled={!isNew}
-						class={isNew
-							? 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600'
-							: 'w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-800 bg-neutral-900/50 text-neutral-400'}
-					>
-						{isNew && <option value=''>Select seiyuu...</option>}
-						{
-							allSeiyuu.map((s) => (
-								<option
-									value={s.id}
-									selected={s.id === pairing.seiyuuBId}
-								>
-									{s.name}
-								</option>
-							))
-						}
-					</select>
-				</div>
-			</div>
-
-			<div>
-				<label
-					for='pairName'
-					class='text-sm text-neutral-400 block mb-1.5'
-					>Pair name</label
-				>
-				<input
-					type='text'
-					id='pairName'
-					value={pairing.pairName}
-					placeholder='e.g. The SAO Duo'
-					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 placeholder:text-neutral-600'
-				/>
-			</div>
-
-			<div>
-				<label
-					for='description'
-					class='text-sm text-neutral-400 block mb-1.5'
-					>Description</label
-				>
-				<textarea
-					id='description'
-					rows='2'
-					placeholder="e.g. Kirito & Asuna · one of anime's most iconic voice pairings"
-					class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 resize-none placeholder:text-neutral-600'
-					>{pairing.description}</textarea
-				>
-			</div>
-
-			{
-				!isNew && (
-					<div class='grid grid-cols-2 gap-4 pt-2 border-t border-neutral-800'>
-						<div>
-							<div class='text-xs text-neutral-500 mb-1'>
-								Shared anime
-							</div>
-							<div class='text-sm text-neutral-300'>
-								{pairing.sharedCount} (auto-calculated)
-							</div>
-						</div>
-						<div>
-							<div class='text-xs text-neutral-500 mb-1'>
-								Detection
-							</div>
-							<div class='text-sm text-neutral-300'>
-								{pairing.isAutoDetected
-									? 'Auto-detected'
-									: 'Manually created'}
-							</div>
-						</div>
-					</div>
-				)
-			}
-
-			<p id='save-msg' class='text-sm text-amber-400 hidden'></p>
-
-			<div class='flex gap-3 mt-2'>
-				<button
-					type='submit'
-					class='text-sm px-4 py-2.5 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'
-				>
-					{isNew ? 'Create pairing' : 'Save changes'}
-				</button>
-				{
-					!isNew && (
-						<button
-							type='button'
-							class='text-sm px-4 py-2.5 rounded-md border border-red-900 text-red-400 font-medium hover:bg-red-950/30'
-						>
-							Delete pairing
-						</button>
-					)
-				}
-			</div>
-		</form>
-	</div>
-</AdminLayout>
+    <div id='pairing-content'>Loading...</div>
+  </div>
+</AdminSplitLayout>
 
 <script>
-	// static placeholder for now — will call POST or PATCH /api/v1/pairings once backend is wired up
-	const form = document.getElementById('pairing-form')
-	const saveMsg = document.getElementById('save-msg')
+  const API_BASE = 'http://localhost:3001/api/v1'
+  const pathParts = window.location.pathname.split('/')
+  const pairingId = pathParts[pathParts.length - 1]
+  const isNew = pairingId === 'new'
 
-	form?.addEventListener('submit', (e) => {
-		e.preventDefault()
-		if (saveMsg) {
-			saveMsg.textContent =
-				'Save is not connected yet — backend integration coming soon.'
-			saveMsg.classList.remove('hidden')
-		}
-	})
+  function getAuthHeaders() {
+    const token = localStorage.getItem('seiyuu_token')
+    return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  }
+
+  function escapeHtml(s: string) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+  function refreshPreview() {
+    const frame = document.getElementById('preview-frame') as HTMLIFrameElement | null
+    if (frame) frame.src = frame.src
+  }
+
+  async function render() {
+    const container = document.getElementById('pairing-content')!
+    let pairData: any = null
+
+    if (!isNew) {
+      try {
+        const res = await fetch(`${API_BASE}/pairings/${pairingId}`)
+        if (res.ok) pairData = await res.json()
+      } catch {}
+    }
+
+    container.innerHTML = `
+      <h1 class='text-2xl font-medium mb-1'>${isNew ? 'New pairing' : pairData?.pairName || 'Edit pairing'}</h1>
+      <p class='text-sm text-neutral-500 mb-8'>${isNew ? 'Link two seiyuu as a recognized duo' : 'Edit name and description'}</p>
+
+      <div class='flex flex-col gap-5'>
+        ${isNew ? renderSeiyuuPickers() : renderSeiyuuInfo(pairData)}
+
+        <div>
+          <label for='pairName' class='text-sm text-neutral-400 block mb-1.5'>Pair name</label>
+          <input type='text' id='pairName' value="${escapeHtml(pairData?.pairName || '')}" placeholder='e.g. The SAO Duo'
+            class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 placeholder:text-neutral-600' />
+        </div>
+
+        <div>
+          <label for='description' class='text-sm text-neutral-400 block mb-1.5'>Description</label>
+          <textarea id='description' rows='2' placeholder='e.g. Kirito & Asuna'
+            class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 resize-none placeholder:text-neutral-600'>${pairData?.description || ''}</textarea>
+        </div>
+
+        ${!isNew && pairData ? `
+          <div class='grid grid-cols-2 gap-4 text-sm'>
+            <div><span class='text-neutral-500'>Shared anime</span> <span class='text-neutral-300 ml-2'>${pairData.sharedCount}</span></div>
+            <div><span class='text-neutral-500'>Source</span> <span class='text-neutral-300 ml-2'>${pairData.isAutoDetected ? 'Auto-detected' : 'Manual'}</span></div>
+          </div>
+        ` : ''}
+
+        <p id='save-msg' class='text-sm hidden'></p>
+
+        <div class='flex gap-3 mt-2'>
+          <button id='save-btn' class='text-sm px-4 py-2.5 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>${isNew ? 'Create pairing' : 'Save changes'}</button>
+          ${!isNew ? `<button id='delete-btn' class='text-sm px-4 py-2.5 rounded-md border border-red-900 text-red-400 font-medium hover:bg-red-950/30'>Delete pairing</button>` : ''}
+        </div>
+      </div>`
+
+    // attach save
+    const msg = document.getElementById('save-msg')!
+    document.getElementById('save-btn')?.addEventListener('click', async () => {
+      msg.classList.add('hidden')
+      const pairName = (document.getElementById('pairName') as HTMLInputElement).value.trimEnd() || null
+      const description = (document.getElementById('description') as HTMLTextAreaElement).value.trimEnd() || null
+
+      if (isNew) {
+        const seiyuuAId = (document.getElementById('seiyuuA') as HTMLInputElement).value
+        const seiyuuBId = (document.getElementById('seiyuuB') as HTMLInputElement).value
+        if (!seiyuuAId || !seiyuuBId) { msg.textContent = 'Both seiyuu must be selected'; msg.classList.remove('hidden'); return }
+
+        const res = await fetch(`${API_BASE}/pairings`, {
+          method: 'POST', headers: getAuthHeaders(),
+          body: JSON.stringify({ seiyuuAId, seiyuuBId, pairName, description }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          window.location.href = `/admin/pairings/${data.id}`
+        } else {
+          const err = await res.json().catch(() => ({}))
+          msg.textContent = err.message || 'Failed to create'; msg.classList.remove('hidden')
+        }
+      } else {
+        const res = await fetch(`${API_BASE}/pairings/${pairingId}`, {
+          method: 'PATCH', headers: getAuthHeaders(),
+          body: JSON.stringify({ pairName, description }),
+        })
+        if (res.ok) {
+          msg.textContent = 'Saved!'; msg.classList.remove('hidden')
+          setTimeout(() => msg.classList.add('hidden'), 2000)
+          refreshPreview()
+        } else {
+          msg.textContent = 'Failed to save'; msg.classList.remove('hidden')
+        }
+      }
+    })
+
+    document.getElementById('delete-btn')?.addEventListener('click', async () => {
+      if (!confirm('Delete this pairing?')) return
+      const res = await fetch(`${API_BASE}/pairings/${pairingId}`, { method: 'DELETE', headers: getAuthHeaders() })
+      if (res.ok) window.location.href = '/admin/pairings'
+    })
+
+    if (isNew) attachPickerSearch('seiyuuA')
+    if (isNew) attachPickerSearch('seiyuuB')
+  }
+
+  function renderSeiyuuPickers() {
+    return `
+      <div class='grid grid-cols-2 gap-4'>
+        ${pickerMarkup('Seiyuu A', 'seiyuuA')}
+        ${pickerMarkup('Seiyuu B', 'seiyuuB')}
+      </div>`
+  }
+
+  function pickerMarkup(label: string, id: string) {
+    return `
+      <div>
+        <label class='text-sm text-neutral-400 block mb-1.5'>${label}</label>
+        <div class='relative'>
+          <input type='text' id='${id}-search' placeholder='Search by name...'
+            class='w-full text-sm px-3.5 py-2.5 rounded-md border border-neutral-700 bg-neutral-900 text-white outline-none focus:border-teal-600 placeholder:text-neutral-600'
+            autocomplete='off' />
+          <input type='hidden' id='${id}' value='' />
+          <div id='${id}-results' class='absolute top-full left-0 right-0 mt-1 border border-neutral-700 rounded-md bg-neutral-950 max-h-48 overflow-y-auto z-10 hidden'></div>
+        </div>
+      </div>`
+  }
+
+  function renderSeiyuuInfo(data: any) {
+    const sa = data?.seiyuuA
+    const sb = data?.seiyuuB
+    return `
+      <div class='grid grid-cols-2 gap-4 pb-4 border-b border-neutral-800'>
+        <div>
+          <div class='text-xs text-neutral-500 mb-1'>Seiyuu A (locked)</div>
+          <div class='text-sm font-medium'>${escapeHtml(sa?.nameRomaji || '—')}</div>
+          <div class='text-xs text-neutral-500'>${escapeHtml(sa?.nameKanji || '')}</div>
+        </div>
+        <div>
+          <div class='text-xs text-neutral-500 mb-1'>Seiyuu B (locked)</div>
+          <div class='text-sm font-medium'>${escapeHtml(sb?.nameRomaji || '—')}</div>
+          <div class='text-xs text-neutral-500'>${escapeHtml(sb?.nameKanji || '')}</div>
+        </div>
+      </div>`
+  }
+
+  function attachPickerSearch(id: string) {
+    const searchInput = document.getElementById(`${id}-search`) as HTMLInputElement
+    const hidden = document.getElementById(id) as HTMLInputElement
+    const resultsDiv = document.getElementById(`${id}-results`)!
+    let timer: any
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(timer)
+      const q = searchInput.value.trim()
+      if (q.length < 2) { resultsDiv.classList.add('hidden'); return }
+      timer = setTimeout(async () => {
+        const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(q)}&limit=6`)
+        const data = await res.json()
+        const items = data.results || []
+        resultsDiv.innerHTML = items.length
+          ? items.map((s: any) => `
+            <div class='flex items-center gap-2 px-3 py-2 text-sm hover:bg-neutral-800 cursor-pointer' data-id="${s.id}" data-name="${escapeHtml(s.nameRomaji)}">
+              ${s.imageUrl ? `<img src="${s.imageUrl}" class="w-6 h-6 rounded-full object-cover" />` : ''}
+              <span>${escapeHtml(s.nameRomaji)} <span class='text-neutral-500 text-xs'>${escapeHtml(s.nameKanji || '')}</span></span>
+            </div>`).join('')
+          : '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>'
+        resultsDiv.querySelectorAll('div[data-id]').forEach(el => {
+          el.addEventListener('click', () => {
+            hidden.value = el.getAttribute('data-id')!
+            searchInput.value = el.getAttribute('data-name')!
+            resultsDiv.classList.add('hidden')
+          })
+        })
+        resultsDiv.classList.remove('hidden')
+      }, 250)
+    })
+
+    document.addEventListener('click', e => {
+      if (!searchInput.contains(e.target as Node) && !resultsDiv.contains(e.target as Node)) {
+        resultsDiv.classList.add('hidden')
+      }
+    })
+  }
+
+  render()
 </script>

@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia'
-import { seiyuuRoutes } from './seiyuu'
+import { seiyuuRoutes, adminSeiyuuRoutes } from './seiyuu'
 import { seasonRoutes } from './season'
 import { searchRoutes } from './search'
 import { pairingRoutes } from './pairing'
@@ -10,6 +10,7 @@ import { animeRoutes } from './anime'
 
 export const v1Routes = new Elysia({ prefix: '/v1' })
   .use(seiyuuRoutes)
+  .use(adminSeiyuuRoutes)
   .use(seasonRoutes)
   .use(searchRoutes)
   .use(pairingRoutes)

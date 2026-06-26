@@ -3,7 +3,8 @@ import {
   getAllPairings,
   getPairingById,
   createPairing,
-  updatePairing
+  updatePairing,
+  deletePairing
 } from '../../services/pairing.service'
 import { adminMiddleware } from '../../middleware/auth.middleware'
 
@@ -58,6 +59,16 @@ const adminPairingRoutes = new Elysia({ prefix: '/pairings' })
       pairName: t.Optional(t.String()),
       description: t.Optional(t.String())
     })
+  })
+  .delete('/:id', async ({ params, set }) => {
+    const result = await deletePairing(params.id)
+    if (!result) {
+      set.status = 404
+      return { message: 'Pairing not found' }
+    }
+    return { message: 'Deleted' }
+  }, {
+    params: t.Object({ id: t.String() })
   })
 
 // export both together

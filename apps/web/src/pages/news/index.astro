@@ -43,8 +43,14 @@ const categoryStyles: Record<string, string> = {
     </div>
 
     <div id='news-list' class='flex flex-col gap-4'>
-      {newsPosts.map((post) => (
-        <a href={`/news/${post.id}`} data-category={post.category ?? ''}
+      {newsPosts.map((post) => {
+        const hasBody = post.body && post.body.trim().length > 0
+        const isExternal = !hasBody && post.sourceUrl
+        const href = isExternal ? post.sourceUrl! : `/news/${post.id}`
+        const target = isExternal ? '_blank' : ''
+        const rel = isExternal ? 'noopener noreferrer' : ''
+        return (
+        <a href={href} target={target} rel={rel} data-category={post.category ?? ''}
           class='news-item block border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
           <div class='flex items-start gap-4'>
             {post.seiyuu ? (
@@ -60,13 +66,19 @@ const categoryStyles: Record<string, string> = {
                 <span class='text-xs text-neutral-500'>
                   {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                 </span>
+                {isExternal && (<span class='text-xs text-teal-500'>🔗 external</span>)}
               </div>
               <h2 class='text-base font-medium mb-2 leading-snug'>{post.title}</h2>
-              <p class='text-sm text-neutral-400 leading-relaxed'>{post.body}</p>
+              {hasBody ? (
+                <p class='text-sm text-neutral-400 leading-relaxed'>{post.body}</p>
+              ) : (
+                <p class='text-sm text-teal-500'>Read on source →</p>
+              )}
             </div>
           </div>
         </a>
-      ))}
+        )}
+      )}
     </div>
   </div>
 </BaseLayout>

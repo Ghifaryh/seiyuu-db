@@ -10,7 +10,7 @@ const { title = 'Admin — seiyuu.db' } = Astro.props
 const adminLinks = [
 	{ label: 'Overview', href: '/admin', icon: 'ti-layout-dashboard' },
 	{ label: 'Seiyuu', href: '/admin/seiyuu', icon: 'ti-users' },
-	{ label: 'Anime', href: '/admin/anime', icon: 'ti-movie' },
+	// { label: 'Anime', href: '/admin/anime', icon: 'ti-movie' },
 	{ label: 'Pairings', href: '/admin/pairings', icon: 'ti-heart' },
 	{ label: 'News', href: '/admin/news', icon: 'ti-news' },
 	{ label: 'Sync', href: '/admin/sync', icon: 'ti-refresh' },
@@ -82,6 +82,7 @@ const currentPath = Astro.url.pathname
 
 				<div class='p-3 border-t border-neutral-800'>
 					<button
+						id='logout-btn'
 						class='flex items-center gap-2.5 text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900 w-full'
 					>
 						<i class='ti ti-logout text-base'></i>
@@ -123,4 +124,10 @@ const currentPath = Astro.url.pathname
 
 	toggle?.addEventListener('click', openSidebar)
 	backdrop?.addEventListener('click', closeSidebar)
+
+	document.getElementById('logout-btn')?.addEventListener('click', () => {
+		localStorage.removeItem('seiyuu_token')
+		localStorage.removeItem('seiyuu_user')
+		window.location.href = '/admin/login'
+	})
 </script>

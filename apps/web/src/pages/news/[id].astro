@@ -40,6 +40,12 @@ const categoryLabel: Record<string, string> = {
 const formattedDate = post?.publishedAt
   ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   : ''
+
+const hasBody = post?.body && post.body.trim().length > 0
+
+if (post && !hasBody && post.sourceUrl) {
+  return Astro.redirect(post.sourceUrl)
+}
 ---
 
 <BaseLayout title={post ? `${post.title} — seiyuu.db` : 'Not Found — seiyuu.db'}>

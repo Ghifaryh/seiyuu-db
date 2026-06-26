@@ -1,0 +1,158 @@
+---
+export const prerender = false
+
+import AdminSplitLayout from '../../../layouts/AdminSplitLayout.astro'
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
+const { id } = Astro.params
+const isNew = id === 'new'
+---
+
+<AdminGuard />
+<AdminSplitLayout title={isNew ? 'New post — seiyuu.db admin' : 'Edit post — seiyuu.db admin'} previewUrl={isNew ? undefined : `/news/${id}`}>
+  <div class='px-8 py-8 max-w-2xl'>
+    <a href='/admin/news' class='inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200 mb-6'>
+      &larr; Back to news
+    </a>
+
+    <h1 class='text-2xl font-medium mb-8'>{isNew ? 'New post' : 'Edit post'}</h1>
+
+    <div id='edit-form' class='flex flex-col gap-4'>
+      <input id='edit-title' placeholder='Title' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+
+      <label class='flex items-center gap-2 cursor-pointer w-fit'>
+        <input type='checkbox' id='has-body-toggle' class='rounded border-neutral-700 bg-neutral-950 accent-teal-600' checked />
+        <span class='text-sm text-neutral-400'>Has body content</span>
+      </label>
+
+      <textarea id='edit-body' rows='6' placeholder='Body text...' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600'></textarea>
+
+      <div class='flex gap-4'>
+        <select id='edit-category' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white'>
+          <option value='roles'>Role announcement</option>
+          <option value='agency'>Agency news</option>
+        </select>
+        <input id='edit-seiyuu' placeholder='Seiyuu ID (optional)' class='text-sm flex-1 px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+      </div>
+
+      <div>
+        <input id='edit-source' placeholder='Source URL (required if no body)' class='text-sm w-full px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <p id='source-hint' class='text-xs text-neutral-500 mt-1 hidden'>Source URL is required when body is empty</p>
+      </div>
+
+      <p id='edit-error' class='text-sm text-red-400 hidden'></p>
+      <p id='edit-success' class='text-sm text-teal-400 hidden'></p>
+
+      <button id='save-btn' class='text-sm px-4 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500 w-fit'>
+        {isNew ? 'Publish' : 'Save changes'}
+      </button>
+    </div>
+  </div>
+</AdminSplitLayout>
+
+<script>
+  const API_BASE = 'http://localhost:3001/api/v1'
+  const pathParts = window.location.pathname.split('/')
+  const postId = pathParts[pathParts.length - 1]
+  const isNew = postId === 'new'
+
+  function getAuthHeaders() {
+    const token = localStorage.getItem('seiyuu_token')
+    return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  }
+
+  const bodyEl = document.getElementById('edit-body') as HTMLTextAreaElement
+  const sourceInput = document.getElementById('edit-source') as HTMLInputElement
+  const hasBodyToggle = document.getElementById('has-body-toggle') as HTMLInputElement
+  const sourceHint = document.getElementById('source-hint') as HTMLParagraphElement
+
+  function toggleBody() {
+    const hasBody = hasBodyToggle.checked
+    bodyEl.classList.toggle('hidden', !hasBody)
+    bodyEl.classList.toggle('opacity-30', !hasBody)
+    sourceHint.classList.toggle('hidden', hasBody)
+  }
+
+  hasBodyToggle.addEventListener('change', toggleBody)
+
+  // Load existing post
+  if (!isNew) {
+    fetch(`${API_BASE}/news/${postId}`)
+      .then(r => r.json())
+      .then(p => {
+        if (p.message) return
+        ;(document.getElementById('edit-title') as HTMLInputElement).value = p.title || ''
+        ;(document.getElementById('edit-category') as HTMLSelectElement).value = p.category || 'roles'
+        ;(document.getElementById('edit-seiyuu') as HTMLInputElement).value = p.seiyuu?.id || ''
+        ;(document.getElementById('edit-source') as HTMLInputElement).value = p.sourceUrl || ''
+        if (p.body) {
+          bodyEl.value = p.body
+          hasBodyToggle.checked = true
+        } else {
+          hasBodyToggle.checked = false
+          toggleBody()
+        }
+      })
+  }
+
+  document.getElementById('save-btn')?.addEventListener('click', async () => {
+    const title = (document.getElementById('edit-title') as HTMLInputElement).value.trim()
+    const body = bodyEl.value.trim()
+    const category = (document.getElementById('edit-category') as HTMLSelectElement).value
+    const seiyuuId = (document.getElementById('edit-seiyuu') as HTMLInputElement).value.trim() || null
+    const sourceUrl = sourceInput.value.trim() || null
+    const errorEl = document.getElementById('edit-error')!
+    const successEl = document.getElementById('edit-success')!
+
+    errorEl.classList.add('hidden')
+    successEl.classList.add('hidden')
+
+    if (!title) {
+      errorEl.textContent = 'Title is required'
+      errorEl.classList.remove('hidden')
+      return
+    }
+
+    if (!body && !sourceUrl) {
+      errorEl.textContent = 'Either body content or a source URL is required'
+      errorEl.classList.remove('hidden')
+      return
+    }
+
+    if (isNew) {
+      const user = JSON.parse(localStorage.getItem('seiyuu_user') || '{}')
+      const res = await fetch(`${API_BASE}/news`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title, body, category, seiyuuId, sourceUrl, createdBy: user.id }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        successEl.textContent = 'Published! Redirecting...'
+        successEl.classList.remove('hidden')
+        setTimeout(() => { window.location.href = '/admin/news' }, 800)
+      } else {
+        const data = await res.json()
+        errorEl.textContent = data.message || 'Failed to create'
+        errorEl.classList.remove('hidden')
+      }
+    } else {
+      const res = await fetch(`${API_BASE}/news/${postId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title, body: body || undefined, category, seiyuuId: seiyuuId || undefined, sourceUrl: sourceUrl || undefined }),
+      })
+      if (res.ok) {
+        successEl.textContent = 'Saved!'
+        successEl.classList.remove('hidden')
+        setTimeout(() => successEl.classList.add('hidden'), 2000)
+        // refresh preview
+        const frame = document.getElementById('preview-frame') as HTMLIFrameElement | null
+        if (frame) frame.src = frame.src
+      } else {
+        const data = await res.json()
+        errorEl.textContent = data.message || 'Failed to save'
+        errorEl.classList.remove('hidden')
+      }
+    }
+  })
+</script>

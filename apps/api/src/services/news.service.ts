@@ -91,3 +91,19 @@ export async function deleteNewsPost(id: string) {
 
   return result ?? null
 }
+
+export async function updateNewsPost(id: string, data: {
+  title?: string
+  body?: string
+  category?: string
+  seiyuuId?: string | null
+  sourceUrl?: string | null
+}) {
+  const [result] = await db
+    .update(newsPost)
+    .set(data)
+    .where(eq(newsPost.id, id))
+    .returning()
+
+  return result ?? null
+}

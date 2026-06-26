@@ -12,6 +12,7 @@ export const seiyuu = pgTable('seiyuu', {
   isActive: boolean('is_active').default(true),
   imageUrl: text('image_url'),
   source: text('source').unique(),
+  enriched: boolean('enriched').default(false),
   syncedAt: timestamp('synced_at').defaultNow()
 })
 

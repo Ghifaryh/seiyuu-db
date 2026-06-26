@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia'
-import { getNews, getNewsById, createNewsPost, deleteNewsPost } from '../../services/news.service'
+import { getNews, getNewsById, createNewsPost, deleteNewsPost, updateNewsPost } from '../../services/news.service'
 import { adminMiddleware } from '../../middleware/auth.middleware'
 
 const publicNewsRoutes = new Elysia({ prefix: '/news' })
@@ -32,9 +32,10 @@ const adminNewsRoutes = new Elysia({ prefix: '/news' })
   }, {
     body: t.Object({
       title: t.String(),
-      body: t.String(),
+      body: t.Optional(t.String()),
       category: t.Optional(t.String()),
-      seiyuuId: t.Optional(t.String()),
+      seiyuuId: t.Optional(t.Nullable(t.String())),
+      sourceUrl: t.Optional(t.Nullable(t.String())),
       createdBy: t.String()
     })
   })
@@ -47,6 +48,23 @@ const adminNewsRoutes = new Elysia({ prefix: '/news' })
     return { message: 'Deleted successfully' }
   }, {
     params: t.Object({ id: t.String() })
+  })
+  .patch('/:id', async ({ params, body, set }) => {
+    const result = await updateNewsPost(params.id, body)
+    if (!result) {
+      set.status = 404
+      return { message: 'News post not found' }
+    }
+    return result
+  }, {
+    params: t.Object({ id: t.String() }),
+    body: t.Object({
+      title: t.Optional(t.String()),
+      body: t.Optional(t.String()),
+      category: t.Optional(t.String()),
+      seiyuuId: t.Optional(t.Nullable(t.String())),
+      sourceUrl: t.Optional(t.Nullable(t.String())),
+    })
   })
 
 export const newsRoutes = new Elysia()

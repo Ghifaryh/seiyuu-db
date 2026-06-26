@@ -1,0 +1,128 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
+---
+
+<AdminGuard />
+<AdminLayout title='News — seiyuu.db admin'>
+  <div class='px-8 py-8 max-w-4xl'>
+    <div class='flex items-center justify-between mb-8'>
+      <div>
+        <h1 class='text-2xl font-medium mb-1'>News</h1>
+        <p class='text-sm text-neutral-400'>Manage role announcements and agency news</p>
+      </div>
+      <div class='flex gap-2'>
+        <a href='/admin/news/new' class='text-sm px-4 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>
+          + New post
+        </a>
+      </div>
+    </div>
+
+    <!-- News list -->
+    <div id='news-list' class='flex flex-col gap-3'></div>
+  </div>
+</AdminLayout>
+
+<script>
+  const API_BASE = 'http://localhost:3001/api/v1'
+
+  function getAuthHeaders() {
+    const token = localStorage.getItem('seiyuu_token')
+    return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  }
+
+  async function loadNews() {
+    const container = document.getElementById('news-list')!
+    try {
+      const res = await fetch(`${API_BASE}/news?limit=50`)
+      const posts: any[] = await res.json()
+
+      container.innerHTML = posts.map(p => {
+        const seiyuuName = p.seiyuu?.nameRomaji ?? '—'
+        const date = p.publishedAt
+          ? new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : ''
+        const catLabel = p.category === 'roles' ? 'Role announcement' : p.category === 'agency' ? 'Agency news' : 'Update'
+        const catClass = p.category === 'roles' ? 'bg-teal-900/50 text-teal-300' : p.category === 'agency' ? 'bg-purple-900/50 text-purple-300' : 'bg-neutral-800 text-neutral-400'
+        const hasBody = p.body && p.body.trim().length > 0
+        const typeIcon = hasBody ? '' : '<span class="text-xs text-neutral-500 ml-1">(link-only)</span>'
+
+        return `
+          <div class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 cursor-pointer hover:border-neutral-600 transition-colors' data-view="${p.id}" data-hasbody="${hasBody}" data-source="${escapeHtml(p.sourceUrl || '')}">
+            <div class='flex items-center gap-2 mb-2'>
+              <span class='text-xs px-2.5 py-0.5 rounded-full font-medium ${catClass}'>${catLabel}</span>
+              <span class='text-xs text-neutral-500'>${date}</span>
+              <span class='text-xs text-neutral-500'>· ${seiyuuName}</span>
+              ${typeIcon}
+            </div>
+            <h3 class='text-base font-medium mb-1'>${escapeHtml(p.title)}</h3>
+            ${hasBody ? `<p class='text-sm text-neutral-400 mb-3'>${escapeHtml(p.body).substring(0, 200)}</p>` : `<p class='text-sm text-teal-500 mb-3'>🔗 ${escapeHtml(p.sourceUrl || '')}</p>`}
+            <div class='flex gap-2'>
+              <button data-edit="${p.id}" class='text-xs px-3 py-1 rounded-md border border-neutral-700 text-neutral-400 hover:bg-neutral-900'>Edit</button>
+              <button data-delete="${p.id}" class='text-xs px-3 py-1 rounded-md border border-red-800/50 text-red-400 hover:bg-red-950/30'>Delete</button>
+            </div>
+          </div>`
+      }).join('')
+    } catch {
+      container.innerHTML = '<p class="text-sm text-neutral-500">Failed to load news</p>'
+    }
+  }
+
+  function escapeHtml(s: string) { return s.replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+  loadNews()
+
+  // event delegation for edit/delete/view
+  document.getElementById('news-list')?.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement
+
+    // check for button clicks first
+    const btn = target.closest('button') as HTMLButtonElement | null
+    if (btn) {
+      const editId = btn.getAttribute('data-edit')
+      const deleteId = btn.getAttribute('data-delete')
+
+      if (editId) {
+        window.location.href = `/admin/news/${editId}`
+      }
+
+      if (deleteId) {
+        const deleteBtn = btn
+        const parent = deleteBtn.parentElement!
+        const originalHtml = parent.innerHTML
+
+        // replace with confirm UI
+        parent.innerHTML = `
+          <span class='text-xs text-red-400 mr-2'>Delete?</span>
+          <button data-confirm-delete="${deleteId}" class='text-xs px-3 py-1 rounded-md bg-red-600 text-red-50 font-medium'>Yes</button>
+          <button data-cancel-delete class='text-xs px-3 py-1 rounded-md border border-neutral-700 text-neutral-400 ml-1'>No</button>
+        `
+
+        // handle the yes/no
+        const handleConfirm = async (ev: Event) => {
+          parent.removeEventListener('click', handleConfirm)
+          const b = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null
+          if (b?.hasAttribute('data-confirm-delete')) {
+            const res = await fetch(`${API_BASE}/news/${deleteId}`, {
+              method: 'DELETE',
+              headers: getAuthHeaders(),
+            })
+            if (res.ok) loadNews()
+          } else {
+            parent.innerHTML = originalHtml
+            loadNews()
+          }
+        }
+        parent.addEventListener('click', handleConfirm)
+      }
+      return
+    }
+
+    // card click — navigate to edit (which has preview)
+    const card = target.closest('[data-view]') as HTMLElement | null
+    if (card) {
+      const viewId = card.getAttribute('data-view')
+      if (viewId) window.location.href = `/admin/news/${viewId}`
+    }
+  })
+</script>

@@ -146,3 +146,63 @@ export async function fetchStaffFromAniList(anilistId: number) {
   const json = await res.json() as any
   return json.data?.Staff ?? null
 }
+
+// fetch full voice acting career (characterMedia) for a seiyuu
+export async function fetchVACareerFromAniList(anilistId: number) {
+  const query = `
+    query ($id: Int, $page: Int) {
+      Staff(id: $id) {
+        id
+        characterMedia(sort: START_DATE_DESC, page: $page, perPage: 50) {
+          pageInfo {
+            hasNextPage
+            currentPage
+          }
+          edges {
+            characterRole
+            characters {
+              id
+              name { full native }
+            }
+            node {
+              id
+              title { romaji native }
+              seasonYear
+              season
+              studios(isMain: true) { nodes { name } }
+              status
+              coverImage { large }
+            }
+          }
+        }
+      }
+    }
+  `
+
+  const allEdges: any[] = []
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const res = await fetch(ANILIST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { id: anilistId, page } })
+    })
+
+    if (!res.ok) break
+
+    const json = await res.json() as any
+    const pageData = json.data?.Staff?.characterMedia
+
+    if (!pageData) break
+
+    allEdges.push(...pageData.edges)
+    hasNextPage = pageData.pageInfo.hasNextPage
+    page++
+
+    await Bun.sleep(700)
+  }
+
+  return allEdges
+}

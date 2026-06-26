@@ -5,17 +5,21 @@ interface NewsItem {
 }
 
 let newsItems: { icon: string; text: string }[] = [
-  { icon: '🎤', text: 'Loading latest news...' },
+  { icon: '🎤', text: 'Aoi Yuuki announced for lead role in Summer 2026 NHK series' },
+  { icon: '🏢', text: 'Hiroshi Kamiya joins new agency following contract renewal' },
+  { icon: '🎤', text: 'Kana Hanazawa cast as lead in upcoming original anime' },
 ]
 
 try {
   const res = await fetch('http://localhost:3001/api/v1/news?limit=5')
   if (res.ok) {
     const data = await res.json() as NewsItem[]
-    newsItems = data.map(item => ({
-      icon: item.category === 'agency' ? '🏢' : '🎤',
-      text: item.title,
-    }))
+    if (data.length > 0) {
+      newsItems = data.map(item => ({
+        icon: item.category === 'agency' ? '🏢' : '🎤',
+        text: item.title,
+      }))
+    }
   }
 } catch {
   // keep fallback

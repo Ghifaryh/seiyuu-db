@@ -1,0 +1,16 @@
+<script>
+  const token = localStorage.getItem('seiyuu_token')
+  const userStr = localStorage.getItem('seiyuu_user')
+  if (!token || !userStr) {
+    window.location.href = '/admin/login'
+  } else {
+    try {
+      const user = JSON.parse(userStr)
+      if (user.role !== 'admin') {
+        window.location.href = '/admin/login'
+      }
+    } catch {
+      window.location.href = '/admin/login'
+    }
+  }
+</script>

@@ -1,0 +1,1 @@
+ALTER TABLE "seiyuu" ADD COLUMN "enriched" boolean DEFAULT false;

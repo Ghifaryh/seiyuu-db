@@ -1,178 +1,137 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro'
-
-// mock data for now — will be replaced with a real fetch to /api/v1/pairings
-const pairings = [
-	{
-		id: 'sao-duo',
-		nameA: 'Yoshitsugu Matsuoka',
-		nameB: 'Ai Kayano',
-		initialsA: 'YM',
-		initialsB: 'AK',
-		pairName: 'The SAO Duo',
-		sharedCount: 8,
-		isAutoDetected: false,
-	},
-	{
-		id: 'kamiya-yuuki',
-		nameA: 'Hiroshi Kamiya',
-		nameB: 'Aoi Yuuki',
-		initialsA: 'HK',
-		initialsB: 'AY',
-		pairName: 'Kamiya & Yuuki',
-		sharedCount: 11,
-		isAutoDetected: true,
-	},
-	{
-		id: 'hanazawa-miyano',
-		nameA: 'Kana Hanazawa',
-		nameB: 'Mamoru Miyano',
-		initialsA: 'KH',
-		initialsB: 'MM',
-		pairName: null,
-		sharedCount: 7,
-		isAutoDetected: true,
-	},
-	{
-		id: 'kaji-hanazawa',
-		nameA: 'Yuki Kaji',
-		nameB: 'Kana Hanazawa',
-		initialsA: 'YK',
-		initialsB: 'KH',
-		pairName: 'Kaji & Hanazawa',
-		sharedCount: 9,
-		isAutoDetected: false,
-	},
-]
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
 ---
 
+<AdminGuard />
 <AdminLayout title='Manage pairings — seiyuu.db'>
-	<div class='px-5 md:px-8 py-6 md:py-8 max-w-5xl'>
-		<div class='flex items-center justify-between mb-6 flex-wrap gap-3'>
-			<div>
-				<h1 class='text-2xl font-medium mb-1'>Pairings</h1>
-				<p class='text-sm text-neutral-400'>
-					{pairings.length} dynamic duos in database
-				</p>
-			</div>
-			<a
-				href='/admin/pairings/new'
-				class='text-sm px-4 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500 flex items-center gap-1.5'
-			>
-				<i class='ti ti-plus text-base'></i>
-				New pairing
-			</a>
-		</div>
+  <div class='flex h-[calc(100vh-56px)] md:h-screen'>
+    <div class='flex-1 min-w-0 overflow-y-auto'>
+      <div class='px-5 md:px-8 py-6 md:py-8 max-w-5xl'>
+        <div class='flex items-center justify-between mb-6 flex-wrap gap-3'>
+          <div>
+            <h1 class='text-2xl font-medium mb-1'>Pairings</h1>
+            <p class='text-sm text-neutral-400' id='pairing-count'>Loading...</p>
+          </div>
+          <a href='/admin/pairings/new'
+            class='text-sm px-4 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500 flex items-center gap-1.5'>
+            <i class='ti ti-plus text-base'></i> New pairing
+          </a>
+        </div>
 
-		<div class='flex items-center gap-2 mb-5'>
-			<button
-				data-filter='all'
-				class='filter-btn text-sm px-3 py-2 rounded-md bg-teal-900/50 text-teal-300 font-medium'
-				>All</button
-			>
-			<button
-				data-filter='named'
-				class='filter-btn text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900'
-				>Named only</button
-			>
-			<button
-				data-filter='auto'
-				class='filter-btn text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900'
-				>Auto-detected</button
-			>
-		</div>
+        <div class='flex items-center gap-2 mb-5'>
+          <button data-filter='all' class='filter-btn text-sm px-3 py-2 rounded-md bg-teal-900/50 text-teal-300 font-medium'>All</button>
+          <button data-filter='named' class='filter-btn text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900'>Named</button>
+          <button data-filter='auto' class='filter-btn text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900'>Auto-detected</button>
+        </div>
 
-		<div class='border border-neutral-800 rounded-xl overflow-hidden'>
-			<div
-				class='hidden md:grid grid-cols-[1fr_120px_100px_60px] gap-3 px-5 py-3 border-b border-neutral-800 bg-neutral-900/50 text-xs text-neutral-500 font-medium uppercase tracking-wide'
-			>
-				<span>Pairing</span>
-				<span>Shared anime</span>
-				<span>Source</span>
-				<span></span>
-			</div>
+        <div class='border border-neutral-800 rounded-xl overflow-hidden'>
+          <div class='hidden md:grid grid-cols-[1fr_120px_100px_60px] gap-3 px-5 py-3 border-b border-neutral-800 bg-neutral-900/50 text-xs text-neutral-500 font-medium uppercase tracking-wide'>
+            <span>Pairing</span><span>Shared anime</span><span>Source</span><span></span>
+          </div>
+          <div id='pairing-rows'></div>
+        </div>
+      </div>
+    </div>
 
-			<div id='pairing-rows'>
-				{
-					pairings.map((p) => (
-						<div
-							class='pairing-row grid grid-cols-1 md:grid-cols-[1fr_120px_100px_60px] gap-2 md:gap-3 px-5 py-3.5 border-b border-neutral-800 last:border-b-0 items-center'
-							data-source={p.isAutoDetected ? 'auto' : 'named'}
-						>
-							<div class='flex items-center gap-3'>
-								<div class='flex items-center'>
-									<div class='w-8 h-8 rounded-full bg-teal-900/60 flex items-center justify-center text-[10px] font-medium text-teal-300 border-2 border-neutral-950'>
-										{p.initialsA}
-									</div>
-									<div class='w-8 h-8 rounded-full bg-purple-900/60 flex items-center justify-center text-[10px] font-medium text-purple-300 border-2 border-neutral-950 -ml-2.5'>
-										{p.initialsB}
-									</div>
-								</div>
-								<div>
-									<div class='text-sm font-medium'>
-										{p.pairName ??
-											`${p.nameA} & ${p.nameB}`}
-									</div>
-									<div class='text-xs text-neutral-500'>
-										{p.nameA} & {p.nameB}
-									</div>
-								</div>
-							</div>
-							<div class='text-sm text-neutral-400'>
-								{p.sharedCount} anime
-							</div>
-							<div>
-								{p.isAutoDetected ? (
-									<span class='text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400'>
-										Auto-detected
-									</span>
-								) : (
-									<span class='text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300'>
-										Named
-									</span>
-								)}
-							</div>
-							<a
-								href={`/admin/pairings/${p.id}`}
-								class='text-sm text-teal-400 hover:text-teal-300 justify-self-start md:justify-self-end'
-							>
-								Edit
-							</a>
-						</div>
-					))
-				}
-			</div>
-		</div>
-	</div>
+    <div id='preview-panel' class='hidden lg:flex flex-col w-[460px] border-l border-neutral-800 flex-shrink-0'>
+      <div class='flex items-center justify-between px-4 h-12 border-b border-neutral-800 flex-shrink-0'>
+        <div class='flex items-center gap-2 text-sm text-neutral-400'>
+          <i class='ti ti-eye text-base'></i>
+          <span>Preview</span>
+        </div>
+        <a id='preview-open-link' href='#' target='_blank' rel='noopener noreferrer'
+          class='text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 hidden'>Open <i class='ti ti-external-link text-sm'></i></a>
+      </div>
+      <div class='flex-1 flex items-center justify-center bg-neutral-900 p-4 overflow-hidden'>
+        <p id='preview-empty' class='text-sm text-neutral-600 text-center px-6'>Click any pairing row to preview</p>
+        <iframe id='preview-iframe' class='hidden w-full h-full border border-neutral-800 rounded-2xl bg-neutral-950'></iframe>
+      </div>
+    </div>
+  </div>
 </AdminLayout>
 
 <script>
-	const filterButtons = document.querySelectorAll('.filter-btn')
-	const rows = document.querySelectorAll('.pairing-row')
+  const API_BASE = 'http://localhost:3001/api/v1'
 
-	filterButtons.forEach((btn) => {
-		btn.addEventListener('click', () => {
-			const filter = btn.getAttribute('data-filter')
+  function getInitials(name: string) {
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  }
 
-			filterButtons.forEach((b) => {
-				b.classList.remove(
-					'bg-teal-900/50',
-					'text-teal-300',
-					'font-medium',
-				)
-				b.classList.add('text-neutral-400')
-			})
-			btn.classList.remove('text-neutral-400')
-			btn.classList.add('bg-teal-900/50', 'text-teal-300', 'font-medium')
+  async function loadPairings() {
+    const container = document.getElementById('pairing-rows')!
+    try {
+      const res = await fetch(`${API_BASE}/pairings?page=1&limit=100`)
+      const data = await res.json()
+      document.getElementById('pairing-count')!.textContent = `${data.length} dynamic duos`
 
-			rows.forEach((row) => {
-				const source = row.getAttribute('data-source')
-				if (filter === 'all' || source === filter) {
-					row.classList.remove('hidden')
-				} else {
-					row.classList.add('hidden')
-				}
-			})
-		})
-	})
+      container.innerHTML = data.map((p: any) => {
+        const isAuto = p.pairing.isAutoDetected
+        return `
+          <div class='pairing-row grid grid-cols-1 md:grid-cols-[1fr_120px_100px_60px] gap-2 md:gap-3 px-5 py-3.5 border-b border-neutral-800 last:border-b-0 items-center cursor-pointer hover:bg-neutral-900/50'
+            data-id="${p.pairing.id}" data-source="${isAuto ? 'auto' : 'named'}">
+            <div class='flex items-center gap-3'>
+              <div class='flex items-center'>
+                <div class='w-8 h-8 rounded-full bg-teal-900/60 flex items-center justify-center text-[10px] font-medium text-teal-300 border-2 border-neutral-950'>${getInitials(p.seiyuuA.nameRomaji)}</div>
+                ${p.seiyuuB ? `<div class='w-8 h-8 rounded-full bg-purple-900/60 flex items-center justify-center text-[10px] font-medium text-purple-300 border-2 border-neutral-950 -ml-2.5'>${getInitials(p.seiyuuB.nameRomaji)}</div>` : ''}
+              </div>
+              <div>
+                <div class='text-sm font-medium'>${p.pairing.pairName || `${p.seiyuuA.nameRomaji} & ${p.seiyuuB?.nameRomaji || '?'}`}</div>
+                <div class='text-xs text-neutral-500'>${p.seiyuuA.nameRomaji} & ${p.seiyuuB?.nameRomaji || '?'}</div>
+              </div>
+            </div>
+            <div class='text-sm text-neutral-400'>${p.pairing.sharedCount} anime</div>
+            <div>
+              ${isAuto
+                ? '<span class="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400">Auto-detected</span>'
+                : '<span class="text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300">Named</span>'}
+            </div>
+            <a href="/admin/pairings/${p.pairing.id}" class='text-sm text-teal-400 hover:text-teal-300 justify-self-start md:justify-self-end edit-link'>Edit</a>
+          </div>`
+      }).join('')
+    } catch {
+      container.innerHTML = '<div class="px-5 py-4 text-sm text-neutral-500">Failed to load</div>'
+    }
+    attachFiltersAndClicks()
+  }
+
+  function attachFiltersAndClicks() {
+    const rows = document.querySelectorAll('.pairing-row')
+    const filterButtons = document.querySelectorAll('.filter-btn')
+    const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement
+    const empty = document.getElementById('preview-empty')!
+    const link = document.getElementById('preview-open-link') as HTMLAnchorElement
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filter = btn.getAttribute('data-filter')
+        filterButtons.forEach(b => { b.classList.remove('bg-teal-900/50','text-teal-300','font-medium'); b.classList.add('text-neutral-400') })
+        btn.classList.remove('text-neutral-400')
+        btn.classList.add('bg-teal-900/50','text-teal-300','font-medium')
+        rows.forEach(row => {
+          const source = row.getAttribute('data-source')
+          if (filter === 'all' || source === filter) row.classList.remove('hidden')
+          else row.classList.add('hidden')
+        })
+      })
+    })
+
+    rows.forEach(row => {
+      row.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement
+        if (target.closest('.edit-link')) return
+        const id = row.getAttribute('data-id')
+        if (!id) return
+        rows.forEach(r => r.classList.remove('bg-neutral-900/70'))
+        row.classList.add('bg-neutral-900/70')
+        iframe.src = `/pairings/${id}`
+        iframe.classList.remove('hidden')
+        empty.classList.add('hidden')
+        link.href = `/pairings/${id}`
+        link.classList.remove('hidden')
+      })
+    })
+  }
+
+  loadPairings()
 </script>

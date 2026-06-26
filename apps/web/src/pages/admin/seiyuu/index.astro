@@ -1,293 +1,177 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro'
-
-const seiyuuList = [
-	{
-		id: 'ai-kayano',
-		nameRomaji: 'Ai Kayano',
-		nameKanji: '茅野愛衣',
-		agency: "I'm Enterprise",
-		isActive: true,
-		isSinger: true,
-		totalRoles: 147,
-		hasEnrichment: true,
-	},
-	{
-		id: 'hiroshi-kamiya',
-		nameRomaji: 'Hiroshi Kamiya',
-		nameKanji: '神谷浩史',
-		agency: 'Across Entertainment',
-		isActive: true,
-		isSinger: false,
-		totalRoles: 203,
-		hasEnrichment: false,
-	},
-	{
-		id: 'kana-hanazawa',
-		nameRomaji: 'Kana Hanazawa',
-		nameKanji: '花澤香菜',
-		agency: 'Across Entertainment',
-		isActive: true,
-		isSinger: true,
-		totalRoles: 178,
-		hasEnrichment: true,
-	},
-	{
-		id: 'yuki-kaji',
-		nameRomaji: 'Yuki Kaji',
-		nameKanji: '梶裕貴',
-		agency: 'Ken-On',
-		isActive: true,
-		isSinger: false,
-		totalRoles: 156,
-		hasEnrichment: false,
-	},
-	{
-		id: 'aoi-yuuki',
-		nameRomaji: 'Aoi Yuuki',
-		nameKanji: '悠木碧',
-		agency: 'Sigma Seven',
-		isActive: true,
-		isSinger: true,
-		totalRoles: 134,
-		hasEnrichment: false,
-	},
-]
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
+import Avatar from '../../../components/Avatar.astro'
 ---
 
+<AdminGuard />
 <AdminLayout title='Manage seiyuu — seiyuu.db'>
-	<div class='flex h-[calc(100vh-56px)] md:h-screen'>
-		<div class='flex-1 min-w-0 overflow-y-auto'>
-			<div class='px-5 md:px-8 py-6 md:py-8 max-w-5xl'>
-				<div
-					class='flex items-center justify-between mb-6 flex-wrap gap-3'
-				>
-					<div>
-						<h1 class='text-2xl font-medium mb-1'>Seiyuu</h1>
-						<p class='text-sm text-neutral-400'>
-							{seiyuuList.length} total in database
-						</p>
-					</div>
-				</div>
+  <div class='flex h-[calc(100vh-56px)] md:h-screen'>
+    <div class='flex-1 min-w-0 overflow-y-auto'>
+      <div class='px-5 md:px-8 py-6 md:py-8 max-w-5xl'>
+        <div class='flex items-center justify-between mb-6 flex-wrap gap-3'>
+          <div>
+            <h1 class='text-2xl font-medium mb-1'>Seiyuu</h1>
+            <p class='text-sm text-neutral-400' id='seiyuu-count'>Loading...</p>
+          </div>
+        </div>
 
-				<div class='flex items-center gap-2 mb-5'>
-					<div
-						class='flex items-center gap-2 border border-neutral-700 rounded-md px-3 py-2 bg-neutral-900 flex-1 max-w-sm'
-					>
-						<i class='ti ti-search text-neutral-500 text-base'></i>
-						<input
-							id='seiyuu-search'
-							type='text'
-							placeholder='Search by name...'
-							class='bg-transparent outline-none text-sm flex-1 placeholder:text-neutral-600'
-						/>
-					</div>
-					<button
-						data-filter='all'
-						class='filter-btn text-sm px-3 py-2 rounded-md bg-teal-900/50 text-teal-300 font-medium whitespace-nowrap'
-						>All</button
-					>
-					<button
-						data-filter='missing'
-						class='filter-btn text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900 whitespace-nowrap'
-						>Missing bio</button
-					>
-				</div>
+        <div class='flex items-center gap-2 mb-5'>
+          <div class='flex items-center gap-2 border border-neutral-700 rounded-md px-3 py-2 bg-neutral-900 flex-1 max-w-sm'>
+            <i class='ti ti-search text-neutral-500 text-base'></i>
+            <input id='seiyuu-search' type='text' placeholder='Search by name...'
+              class='bg-transparent outline-none text-sm flex-1 placeholder:text-neutral-600' />
+          </div>
+          <button data-filter='all' class='filter-btn text-sm px-3 py-2 rounded-md bg-teal-900/50 text-teal-300 font-medium whitespace-nowrap'>All</button>
+          <button data-filter='not-enriched' class='filter-btn text-sm px-3 py-2 rounded-md text-neutral-400 hover:bg-neutral-900 whitespace-nowrap'>Not enriched</button>
+          <button id='prev-page' class='text-sm px-3 py-2 rounded-md border border-neutral-700 text-neutral-400 hover:bg-neutral-900 hidden'>&larr;</button>
+          <button id='next-page' class='text-sm px-3 py-2 rounded-md border border-neutral-700 text-neutral-400 hover:bg-neutral-900'>Page 1</button>
+        </div>
 
-				<div
-					class='border border-neutral-800 rounded-xl overflow-hidden'
-				>
-					<div
-						class='hidden md:grid grid-cols-[1fr_140px_80px_80px_60px] gap-3 px-5 py-3 border-b border-neutral-800 bg-neutral-900/50 text-xs text-neutral-500 font-medium uppercase tracking-wide'
-					>
-						<span>Name</span>
-						<span>Agency</span>
-						<span>Roles</span>
-						<span>Enrichment</span>
-						<span></span>
-					</div>
+        <div class='border border-neutral-800 rounded-xl overflow-hidden'>
+          <div class='hidden md:grid grid-cols-[1fr_140px_80px_100px_60px] gap-3 px-5 py-3 border-b border-neutral-800 bg-neutral-900/50 text-xs text-neutral-500 font-medium uppercase tracking-wide'>
+            <span>Name</span>
+            <span>Agency</span>
+            <span>Active</span>
+            <span>Enrichment</span>
+            <span></span>
+          </div>
+          <div id='seiyuu-rows'></div>
+        </div>
+      </div>
+    </div>
 
-					<div id='seiyuu-rows'>
-						{
-							seiyuuList.map((s) => (
-								<div
-									class='seiyuu-row grid grid-cols-1 md:grid-cols-[1fr_140px_80px_80px_60px] gap-2 md:gap-3 px-5 py-3.5 border-b border-neutral-800 last:border-b-0 items-center cursor-pointer hover:bg-neutral-900/50'
-									data-id={s.id}
-									data-name={`${s.nameRomaji} ${s.nameKanji}`.toLowerCase()}
-									data-has-enrichment={
-										s.hasEnrichment ? 'true' : 'false'
-									}
-								>
-									<div class='flex items-center gap-3'>
-										<div class='w-9 h-9 rounded-full bg-teal-900/60 flex items-center justify-center text-xs font-medium text-teal-300 flex-shrink-0'>
-											{s.nameRomaji
-												.split(' ')
-												.map((n) => n[0])
-												.join('')}
-										</div>
-										<div>
-											<div class='text-sm font-medium'>
-												{s.nameRomaji}
-											</div>
-											<div class='text-xs text-neutral-500'>
-												{s.nameKanji}
-											</div>
-										</div>
-									</div>
-									<div class='text-sm text-neutral-400 md:block'>
-										{s.agency}
-									</div>
-									<div class='text-sm text-neutral-400'>
-										{s.totalRoles}
-									</div>
-									<div>
-										{s.hasEnrichment ? (
-											<span class='text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300'>
-												Complete
-											</span>
-										) : (
-											<span class='text-xs px-2 py-0.5 rounded-full bg-amber-900/50 text-amber-300'>
-												Missing
-											</span>
-										)}
-									</div>
-									<a
-										href={`/admin/seiyuu/${s.id}`}
-										onclick='event.stopPropagation()'
-										class='text-sm text-teal-400 hover:text-teal-300 justify-self-start md:justify-self-end'
-									>
-										Edit
-									</a>
-								</div>
-							))
-						}
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- preview peek panel -->
-		<div
-			id='preview-panel'
-			class='hidden lg:flex flex-col w-[460px] border-l border-neutral-800 flex-shrink-0'
-		>
-			<div
-				class='flex items-center justify-between px-4 h-12 border-b border-neutral-800 flex-shrink-0'
-			>
-				<div class='flex items-center gap-2 text-sm text-neutral-400'>
-					<i class='ti ti-eye text-base'></i>
-					<span id='preview-name'>Select a row to preview</span>
-				</div>
-				<a
-					id='preview-open-link'
-					href='#'
-					target='_blank'
-					rel='noopener noreferrer'
-					class='text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 hidden'
-				>
-					Open
-					<i class='ti ti-external-link text-sm'></i>
-				</a>
-			</div>
-			<div
-				class='flex-1 flex items-center justify-center bg-neutral-900 p-4 overflow-hidden'
-			>
-				<p
-					id='preview-empty'
-					class='text-sm text-neutral-600 text-center px-6'
-				>
-					Click any seiyuu row to preview their public profile here
-				</p>
-				<iframe
-					id='preview-iframe'
-					class='hidden w-full h-full border border-neutral-800 rounded-2xl bg-neutral-950'
-				></iframe>
-			</div>
-		</div>
-	</div>
+    <div id='preview-panel' class='hidden lg:flex flex-col w-[460px] border-l border-neutral-800 flex-shrink-0'>
+      <div class='flex items-center justify-between px-4 h-12 border-b border-neutral-800 flex-shrink-0'>
+        <div class='flex items-center gap-2 text-sm text-neutral-400'>
+          <i class='ti ti-eye text-base'></i>
+          <span id='preview-name'>Select a row to preview</span>
+        </div>
+        <a id='preview-open-link' href='#' target='_blank' rel='noopener noreferrer'
+          class='text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 hidden'>
+          Open <i class='ti ti-external-link text-sm'></i>
+        </a>
+      </div>
+      <div class='flex-1 flex items-center justify-center bg-neutral-900 p-4 overflow-hidden'>
+        <p id='preview-empty' class='text-sm text-neutral-600 text-center px-6'>Click any seiyuu row to preview their public profile here</p>
+        <iframe id='preview-iframe' class='hidden w-full h-full border border-neutral-800 rounded-2xl bg-neutral-950'></iframe>
+      </div>
+    </div>
+  </div>
 </AdminLayout>
 
 <script>
-	const searchInput = document.getElementById(
-		'seiyuu-search',
-	) as HTMLInputElement | null
-	const filterButtons = document.querySelectorAll('.filter-btn')
-	const rows = document.querySelectorAll('.seiyuu-row')
+  const API_BASE = 'http://localhost:3001/api/v1'
+  let currentPage = 1
+  let totalPages = 1
+  let activeFilter = 'all'
+  let allData: any[] = []
 
-	const previewIframe = document.getElementById(
-		'preview-iframe',
-	) as HTMLIFrameElement | null
-	const previewEmpty = document.getElementById('preview-empty')
-	const previewName = document.getElementById('preview-name')
-	const previewOpenLink = document.getElementById(
-		'preview-open-link',
-	) as HTMLAnchorElement | null
+  async function loadPage(page: number) {
+    const res = await fetch(`${API_BASE}/seiyuu?page=${page}&limit=50`)
+    const data = await res.json()
+    allData = data.data
+    totalPages = data.totalPages
+    currentPage = page
+    document.getElementById('seiyuu-count')!.textContent = `${data.total} total`
+    updateButtons()
+    renderRows()
+  }
 
-	let activeFilter = 'all'
+  function updateButtons() {
+    const prev = document.getElementById('prev-page')!
+    const next = document.getElementById('next-page')!
+    prev.classList.toggle('hidden', currentPage <= 1)
+    next.classList.toggle('hidden', currentPage >= totalPages)
+    next.textContent = `Page ${currentPage}${totalPages > 1 ? ` of ${totalPages}` : ''}`
+  }
 
-	function applyFilters() {
-		const query = (searchInput?.value ?? '').toLowerCase().trim()
+  function renderRows() {
+    const container = document.getElementById('seiyuu-rows')!
+    const query = (document.getElementById('seiyuu-search') as HTMLInputElement).value.toLowerCase()
 
-		rows.forEach((row) => {
-			const name = row.getAttribute('data-name') ?? ''
-			const hasEnrichment =
-				row.getAttribute('data-has-enrichment') === 'true'
+    const filtered = allData.filter((s: any) => {
+      const name = `${s.nameRomaji} ${s.nameKanji ?? ''}`.toLowerCase()
+      const matchesSearch = !query || name.includes(query)
+      const matchesFilter = activeFilter === 'all' ||
+        (activeFilter === 'not-enriched' && !s.enriched)
+      return matchesSearch && matchesFilter
+    })
 
-			const matchesSearch = query === '' || name.includes(query)
-			const matchesFilter =
-				activeFilter === 'all' ||
-				(activeFilter === 'missing' && !hasEnrichment)
+    container.innerHTML = filtered.map((s: any) => `
+      <div class='seiyuu-row grid grid-cols-1 md:grid-cols-[1fr_140px_80px_100px_60px] gap-2 md:gap-3 px-5 py-3.5 border-b border-neutral-800 last:border-b-0 items-center cursor-pointer hover:bg-neutral-900/50'
+        data-id="${s.id}" data-name="${escapeHtml(s.nameRomaji)} ${escapeHtml(s.nameKanji ?? '')}" data-enriched="${s.enriched}">
+        <div class='flex items-center gap-3'>
+          <div class='w-9 h-9 rounded-full bg-teal-900/60 flex items-center justify-center text-xs font-medium text-teal-300 flex-shrink-0 overflow-hidden'>
+            ${s.imageUrl ? `<img src="${s.imageUrl}" alt="" class="w-full h-full object-cover" />` : s.nameRomaji.split(' ').map((n: string) => n[0]).join('')}
+          </div>
+          <div>
+            <div class='text-sm font-medium'>${escapeHtml(s.nameRomaji)}</div>
+            <div class='text-xs text-neutral-500'>${escapeHtml(s.nameKanji ?? '')}</div>
+          </div>
+        </div>
+        <div class='text-sm text-neutral-400 md:block'>${escapeHtml(s.agency ?? '—')}</div>
+        <div class='text-sm text-neutral-400'>${s.isActive ? '✓ Active' : '—'}</div>
+        <div>
+          ${s.enriched
+            ? '<span class="text-xs px-2 py-0.5 rounded-full bg-teal-900/50 text-teal-300">Enriched</span>'
+            : '<span class="text-xs px-2 py-0.5 rounded-full bg-amber-900/50 text-amber-300">Pending</span>'}
+        </div>
+        <a href="/admin/seiyuu/${s.id}" class='text-sm text-teal-400 hover:text-teal-300 justify-self-start md:justify-self-end edit-link'>Edit</a>
+      </div>`
+    ).join('')
 
-			if (matchesSearch && matchesFilter) {
-				row.classList.remove('hidden')
-			} else {
-				row.classList.add('hidden')
-			}
-		})
-	}
+    // re-attach row click handlers
+    document.querySelectorAll('.seiyuu-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement
+        if (target.closest('.edit-link')) return
+        const id = row.getAttribute('data-id')
+        if (!id) return
+        const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement
+        const empty = document.getElementById('preview-empty')!
+        const name = document.getElementById('preview-name')!
+        const link = document.getElementById('preview-open-link') as HTMLAnchorElement
 
-	searchInput?.addEventListener('input', applyFilters)
+        ;(document.querySelectorAll('.seiyuu-row')).forEach(r => r.classList.remove('bg-neutral-900/70'))
+        row.classList.add('bg-neutral-900/70')
 
-	filterButtons.forEach((btn) => {
-		btn.addEventListener('click', () => {
-			activeFilter = btn.getAttribute('data-filter') ?? 'all'
+        iframe.src = `/seiyuu/${id}`
+        iframe.classList.remove('hidden')
+        empty.classList.add('hidden')
+        name.textContent = id
+        link.href = `/seiyuu/${id}`
+        link.classList.remove('hidden')
+      })
+    })
+  }
 
-			filterButtons.forEach((b) => {
-				b.classList.remove(
-					'bg-teal-900/50',
-					'text-teal-300',
-					'font-medium',
-				)
-				b.classList.add('text-neutral-400')
-			})
-			btn.classList.remove('text-neutral-400')
-			btn.classList.add('bg-teal-900/50', 'text-teal-300', 'font-medium')
+  function escapeHtml(s: string) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 
-			applyFilters()
-		})
-	})
+  // search
+  document.getElementById('seiyuu-search')?.addEventListener('input', renderRows)
 
-	rows.forEach((row) => {
-		row.addEventListener('click', () => {
-			const id = row.getAttribute('data-id')
-			if (
-				!id ||
-				!previewIframe ||
-				!previewEmpty ||
-				!previewName ||
-				!previewOpenLink
-			)
-				return
+  // filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.getAttribute('data-filter') ?? 'all'
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('bg-teal-900/50','text-teal-300','font-medium')
+        b.classList.add('text-neutral-400')
+      })
+      btn.classList.remove('text-neutral-400')
+      btn.classList.add('bg-teal-900/50','text-teal-300','font-medium')
+      renderRows()
+    })
+  })
 
-			rows.forEach((r) => r.classList.remove('bg-neutral-900/70'))
-			row.classList.add('bg-neutral-900/70')
+  // pagination
+  document.getElementById('prev-page')?.addEventListener('click', () => {
+    if (currentPage > 1) loadPage(currentPage - 1)
+  })
+  document.getElementById('next-page')?.addEventListener('click', () => {
+    if (currentPage < totalPages) loadPage(currentPage + 1)
+  })
 
-			previewIframe.src = `/seiyuu/${id}`
-			previewIframe.classList.remove('hidden')
-			previewEmpty.classList.add('hidden')
-			previewName.textContent = id
-			previewOpenLink.href = `/seiyuu/${id}`
-			previewOpenLink.classList.remove('hidden')
-		})
-	})
+  loadPage(1)
 </script>
