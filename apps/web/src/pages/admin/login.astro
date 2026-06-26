@@ -50,6 +50,17 @@ const API_BASE = 'http://localhost:3001/api/v1'
 </BaseLayout>
 
 <script>
+  const userStr = localStorage.getItem('seiyuu_user')
+  const token = localStorage.getItem('seiyuu_token')
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      if (user.role === 'admin' || user.role === 'superadmin') {
+        window.location.href = '/admin'
+      }
+    } catch {}
+  }
+
   const API_BASE = 'http://localhost:3001/api/v1'
   const form = document.getElementById('login-form') as HTMLFormElement
   const errorMsg = document.getElementById('error-msg') as HTMLParagraphElement

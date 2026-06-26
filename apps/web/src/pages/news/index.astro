@@ -24,6 +24,11 @@ const categoryStyles: Record<string, string> = {
   roles: 'bg-teal-900/50 text-teal-300',
   agency: 'bg-purple-900/50 text-purple-300',
 }
+
+function fixUrl(u: string) {
+  if (u.startsWith('http://') || u.startsWith('https://')) return u
+  return 'https://' + u
+}
 ---
 
 <BaseLayout title='News — seiyuu.db'>
@@ -46,7 +51,7 @@ const categoryStyles: Record<string, string> = {
       {newsPosts.map((post) => {
         const hasBody = post.body && post.body.trim().length > 0
         const isExternal = !hasBody && post.sourceUrl
-        const href = isExternal ? post.sourceUrl! : `/news/${post.id}`
+        const href = isExternal ? fixUrl(post.sourceUrl!) : `/news/${post.id}`
         const target = isExternal ? '_blank' : ''
         const rel = isExternal ? 'noopener noreferrer' : ''
         return (

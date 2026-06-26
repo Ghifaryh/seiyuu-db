@@ -44,7 +44,8 @@ const formattedDate = post?.publishedAt
 const hasBody = post?.body && post.body.trim().length > 0
 
 if (post && !hasBody && post.sourceUrl) {
-  return Astro.redirect(post.sourceUrl)
+  const url = post.sourceUrl.startsWith('http') ? post.sourceUrl : 'https://' + post.sourceUrl
+  return Astro.redirect(url)
 }
 ---
 
@@ -88,7 +89,7 @@ if (post && !hasBody && post.sourceUrl) {
       </div>
 
       {post.sourceUrl && (
-        <a href={post.sourceUrl} target='_blank' rel='noopener noreferrer'
+        <a href={post.sourceUrl.startsWith('http') ? post.sourceUrl : 'https://' + post.sourceUrl} target='_blank' rel='noopener noreferrer'
           class='inline-flex items-center gap-1.5 text-sm text-teal-400 hover:text-teal-300 border border-teal-800/50 bg-teal-950/30 px-4 py-2 rounded-md'>
           View original source
           <i class='ti ti-external-link text-base' />
