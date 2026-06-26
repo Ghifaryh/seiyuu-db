@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import Avatar from '../../components/Avatar.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
-const apiBase = import.meta.env.API_URL || 'http://localhost:3001'
+const apiBase = process.env.API_URL || 'http://localhost:3001'
 
 interface NewsItem {
   id: string

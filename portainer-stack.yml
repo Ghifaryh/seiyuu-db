@@ -1,18 +1,5 @@
 # Portainer Stack — seiyuu.db
 # Paste this into Portainer > Stacks > Add stack > Web editor
-#
-# Required environment variables (set in Portainer UI):
-#   MEILI_MASTER_KEY  — MeiliSearch API key
-#   DATABASE_URL      — PostgreSQL connection string
-#   JWT_SECRET        — JWT signing secret
-#
-# In your Caddyfile, add:
-#   handle_path /api/* {
-#     reverse_proxy api:3001
-#   }
-#   handle {
-#     reverse_proxy web:4321
-#   }
 
 services:
   meilisearch:
@@ -23,6 +10,7 @@ services:
       MEILI_ENV: production
     volumes:
       - meili_data:/meili_data
+    # 🔒 Kept purely internal, no caddy-proxy attached
 
   api:
     image: ghcr.io/ghifaryh/seiyuu-db-api:latest
@@ -36,6 +24,9 @@ services:
       SYNC_ON_STARTUP: "false"
     depends_on:
       - meilisearch
+    networks:
+      - default      # 🤝 To talk to meilisearch
+      - caddy-proxy  # 🌐 To talk to Caddy
 
   web:
     image: ghcr.io/ghifaryh/seiyuu-db-web:latest
@@ -46,9 +37,14 @@ services:
       API_URL: http://api:3001
     depends_on:
       - api
+    networks:
+      - default      # 🤝 To talk to api
+      - caddy-proxy  # 🌐 To talk to Caddy
 
 volumes:
   meili_data:
 
-volumes:
-  meili_data:
+# 🧳 Declare the existing external network room
+networks:
+  caddy-proxy:
+    external: true
