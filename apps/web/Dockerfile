@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json ./
 COPY apps/web/package.json ./apps/web/
 
-RUN cd apps/web && npm install
+RUN cd apps/web && npm install --legacy-peer-deps
 
 COPY tsconfig.base.json ./
 COPY apps/web ./apps/web
