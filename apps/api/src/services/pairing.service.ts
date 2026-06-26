@@ -1,6 +1,6 @@
 import { db } from '../db/client'
-import { pairing, pairingAnime, seiyuu, anime, character } from '../db/schema'
-import { eq, or, desc } from 'drizzle-orm'
+import { pairing, pairingAnime, seiyuu, anime, character, voiceRole } from '../db/schema'
+import { eq, or, desc, inArray } from 'drizzle-orm'
 
 export async function getAllPairings(page = 1, limit = 24) {
   const offset = (page - 1) * limit
@@ -102,16 +102,15 @@ export async function getPairingById(id: string) {
     .from(pairingAnime)
     .where(eq(pairingAnime.pairingId, id))
 
+  // batch-load all charB in one query
+  const charBIds = pairingAnimeRows.map(r => r.charBId).filter(Boolean) as string[]
   const charBMap = new Map<string, { id: string; nameRomaji: string }>()
-  
-  for (const pa of pairingAnimeRows) {
-    if (pa.charBId && !charBMap.has(pa.charBId)) {
-      const [charB] = await db
-        .select({ id: character.id, nameRomaji: character.nameRomaji })
-        .from(character)
-        .where(eq(character.id, pa.charBId))
-      if (charB) charBMap.set(pa.charBId, charB)
-    }
+  if (charBIds.length > 0) {
+    const charBs = await db
+      .select({ id: character.id, nameRomaji: character.nameRomaji })
+      .from(character)
+      .where(inArray(character.id, charBIds))
+    for (const c of charBs) charBMap.set(c.id, c)
   }
 
   const enrichedSharedAnime = sharedAnime.map(sa => {
@@ -185,4 +184,52 @@ export async function deletePairing(id: string) {
     .returning()
 
   return result ?? null
+}
+
+export async function detectSharedAnime(pairingId: string) {
+  const [p] = await db.select().from(pairing).where(eq(pairing.id, pairingId))
+  if (!p) return null
+
+  const saId = p.seiyuuAId
+  const sbId = p.seiyuuBId
+
+  // find anime where seiyuu A has roles
+  const aAnime = await db
+    .select({ animeId: voiceRole.animeId, characterId: voiceRole.characterId })
+    .from(voiceRole)
+    .where(eq(voiceRole.seiyuuId, saId))
+
+  const aIds = new Map(aAnime.map(r => [r.animeId, r.characterId]))
+
+  // find anime where seiyuu B also has roles
+  const bRoles = await db
+    .select({ animeId: voiceRole.animeId, characterId: voiceRole.characterId })
+    .from(voiceRole)
+    .where(eq(voiceRole.seiyuuId, sbId))
+
+  // intersect — shared anime
+  const shared = bRoles.filter(r => aIds.has(r.animeId))
+
+  // insert pairingAnime rows
+  for (const s of shared) {
+    const charAId = aIds.get(s.animeId)!
+    const charBId = s.characterId
+    await db
+      .insert(pairingAnime)
+      .values({
+        pairingId,
+        animeId: s.animeId,
+        charAId,
+        charBId,
+      })
+      .onConflictDoNothing()
+  }
+
+  // update shared count
+  await db
+    .update(pairing)
+    .set({ sharedCount: shared.length, isAutoDetected: true })
+    .where(eq(pairing.id, pairingId))
+
+  return shared.length
 }

@@ -1,0 +1,141 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro'
+import AdminGuard from '../../../components/admin/AdminGuard.astro'
+---
+
+<AdminGuard />
+<AdminLayout title='Sync — seiyuu.db admin'>
+  <div class='px-8 py-8 max-w-3xl'>
+    <h1 class='text-2xl font-medium mb-1'>Sync data</h1>
+    <p class='text-sm text-neutral-400 mb-8'>Pull anime and seiyuu data from AniList for any season</p>
+
+    <div class='border border-neutral-800 rounded-xl p-6 bg-neutral-900/50 mb-8'>
+      <h2 class='text-sm font-medium text-neutral-300 mb-4'>Manual season sync</h2>
+
+      <div class='flex items-end gap-4 flex-wrap'>
+        <div>
+          <label class='text-xs text-neutral-500 block mb-1.5'>Year</label>
+          <select id='sync-year' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white'>
+            {[2026, 2025, 2024, 2023, 2022, 2021, 2020].map(y => <option value={y} selected={y === 2026}>{y}</option>)}
+          </select>
+        </div>
+        <div>
+          <label class='text-xs text-neutral-500 block mb-1.5'>Quarter</label>
+          <select id='sync-quarter' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white'>
+            <option value='winter'>Winter</option>
+            <option value='spring' selected>Spring</option>
+            <option value='summer'>Summer</option>
+            <option value='fall'>Fall</option>
+          </select>
+        </div>
+        <button id='sync-btn' class='text-sm px-4 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>Sync now</button>
+      </div>
+
+      <div class='flex items-end gap-3 flex-wrap'>
+        <button id='sync-all-2026' class='text-sm px-4 py-2 rounded-md border border-teal-700 text-teal-400 hover:bg-teal-950/30'>Sync all 2026</button>
+      </div>
+      <p id='sync-status' class='text-sm text-teal-400 mt-4 hidden'></p>
+    </div>
+
+    <h2 class='text-base font-medium mb-4'>Seasons in database</h2>
+    <div id='season-list' class='border border-neutral-800 rounded-xl overflow-hidden'>
+      <div class='px-5 py-4 text-sm text-neutral-500'>Loading...</div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const API_BASE = 'http://localhost:3001/api/v1'
+
+  function getAuthHeaders() {
+    const token = localStorage.getItem('seiyuu_token')
+    return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  }
+
+  const QUARTERS = ['winter', 'spring', 'summer', 'fall']
+
+  async function loadSeasons() {
+    const container = document.getElementById('season-list')!
+    const seasons: { year: number; quarter: string; count: number }[] = []
+
+    // check season endpoints for anime counts (just current + 2026-2023 range)
+    for (const year of [2026, 2025, 2024, 2023]) {
+      for (const q of QUARTERS) {
+        try {
+          const res = await fetch(`${API_BASE}/season/${year}/${q}?limit=1`)
+          if (!res.ok) continue
+          const data = await res.json()
+          if (data.total > 0) {
+            seasons.push({ year, quarter: q, count: data.total })
+          }
+        } catch {}
+        await new Promise(r => setTimeout(r, 200))
+      }
+    }
+
+    container.innerHTML = seasons.length
+      ? `
+        <div class='hidden md:grid grid-cols-[1fr_100px_120px] gap-3 px-5 py-3 border-b border-neutral-800 bg-neutral-900/50 text-xs text-neutral-500 font-medium uppercase tracking-wide'>
+          <span>Season</span><span>Anime</span><span></span>
+        </div>
+        ${seasons.map(s => `
+          <div class='grid grid-cols-1 md:grid-cols-[1fr_100px_120px] gap-2 md:gap-3 px-5 py-3.5 border-b border-neutral-800 last:border-b-0 items-center'>
+            <div>
+              <span class='text-sm font-medium'>${s.quarter.charAt(0).toUpperCase() + s.quarter.slice(1)} ${s.year}</span>
+            </div>
+            <div class='text-sm text-neutral-400'>${s.count} anime</div>
+            <button data-sync='${s.year}-${s.quarter}' class='text-sm px-3 py-1 rounded-md border border-teal-700 text-teal-400 hover:bg-teal-950/30 w-fit resync-btn'>Re-sync</button>
+          </div>
+        `).join('')}
+      `
+      : '<div class="px-5 py-4 text-sm text-neutral-500">No seasons synced yet</div>'
+
+    document.querySelectorAll('.resync-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [y, q] = btn.getAttribute('data-sync')!.split('-')
+        ;(document.getElementById('sync-year') as HTMLSelectElement).value = y
+        ;(document.getElementById('sync-quarter') as HTMLSelectElement).value = q
+        triggerSync(Number(y), q)
+      })
+    })
+  }
+
+  async function triggerSync(year: number, quarter: string) {
+    const statusEl = document.getElementById('sync-status')!
+    statusEl.textContent = `Syncing ${quarter} ${year}... (this may take a few minutes)`
+    statusEl.classList.add('text-teal-400', 'text-amber-400')
+    statusEl.classList.remove('hidden')
+
+    const res = await fetch(`${API_BASE}/sync/season/${year}/${quarter}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    })
+
+    if (res.ok) {
+      statusEl.textContent = `Sync started for ${quarter} ${year}. Data will appear in a few minutes.`
+      statusEl.classList.remove('text-amber-400')
+      setTimeout(() => {
+        statusEl.classList.add('hidden')
+        loadSeasons()
+      }, 3000)
+    } else {
+      statusEl.textContent = 'Sync failed to start'
+      statusEl.classList.remove('text-teal-400')
+    }
+  }
+
+  document.getElementById('sync-btn')?.addEventListener('click', () => {
+    const year = Number((document.getElementById('sync-year') as HTMLSelectElement).value)
+    const quarter = (document.getElementById('sync-quarter') as HTMLSelectElement).value
+    triggerSync(year, quarter)
+  })
+
+  document.getElementById('sync-all-2026')?.addEventListener('click', async () => {
+    for (const q of QUARTERS) {
+      await triggerSync(2026, q)
+      await new Promise(r => setTimeout(r, 1000))
+    }
+  })
+
+  loadSeasons()
+</script>

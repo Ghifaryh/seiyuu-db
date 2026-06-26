@@ -4,7 +4,8 @@ import {
   getPairingById,
   createPairing,
   updatePairing,
-  deletePairing
+  deletePairing,
+  detectSharedAnime
 } from '../../services/pairing.service'
 import { adminMiddleware } from '../../middleware/auth.middleware'
 
@@ -37,6 +38,8 @@ const adminPairingRoutes = new Elysia({ prefix: '/pairings' })
   .post('/', async ({ body, set }) => {
     const result = await createPairing(body)
     set.status = 201
+    // run detection after responding
+    setTimeout(() => detectSharedAnime(result.id).catch(console.error), 0)
     return result
   }, {
     body: t.Object({
@@ -67,6 +70,16 @@ const adminPairingRoutes = new Elysia({ prefix: '/pairings' })
       return { message: 'Pairing not found' }
     }
     return { message: 'Deleted' }
+  }, {
+    params: t.Object({ id: t.String() })
+  })
+  .post('/:id/detect', async ({ params, set }) => {
+    const count = await detectSharedAnime(params.id)
+    if (count === null) {
+      set.status = 404
+      return { message: 'Pairing not found' }
+    }
+    return { message: `Detected ${count} shared anime` }
   }, {
     params: t.Object({ id: t.String() })
   })

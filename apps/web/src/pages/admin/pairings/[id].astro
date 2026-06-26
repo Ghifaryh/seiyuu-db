@@ -80,6 +80,26 @@ const isNew = id === 'new'
           <button id='save-btn' class='text-sm px-4 py-2.5 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>${isNew ? 'Create pairing' : 'Save changes'}</button>
           ${!isNew ? `<button id='delete-btn' class='text-sm px-4 py-2.5 rounded-md border border-red-900 text-red-400 font-medium hover:bg-red-950/30'>Delete pairing</button>` : ''}
         </div>
+        ${!isNew ? `
+          <div class='pt-4 border-t border-neutral-800'>
+            <button id='detect-btn' class='text-sm px-4 py-2 rounded-md border border-teal-700 text-teal-400 hover:bg-teal-950/30'>Auto-detect shared anime</button>
+            <p id='detect-msg' class='text-sm text-teal-400 mt-2 hidden'></p>
+          </div>
+        ` : ''}
+        ${!isNew && pairData?.sharedAnime?.length > 0 ? `
+          <div class='pt-4'>
+            <p class='text-sm font-medium text-neutral-400 mb-3'>Shared anime & roles</p>
+            <div class='flex flex-col gap-2'>
+              ${pairData.sharedAnime.map((a: any) => `
+                <div class='flex items-center gap-2 text-sm border border-neutral-800 rounded-lg px-3 py-2'>
+                  <span class='w-1.5 h-1.5 rounded-full bg-teal-500 flex-shrink-0'></span>
+                  <span class='flex-1'>${escapeHtml(a.anime.titleRomaji)}</span>
+                  <span class='text-xs text-neutral-500'>${escapeHtml(a.charA?.nameRomaji || '—')} / ${escapeHtml(a.charB?.nameRomaji || '—')}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>`
 
     // attach save
@@ -124,6 +144,20 @@ const isNew = id === 'new'
       if (!confirm('Delete this pairing?')) return
       const res = await fetch(`${API_BASE}/pairings/${pairingId}`, { method: 'DELETE', headers: getAuthHeaders() })
       if (res.ok) window.location.href = '/admin/pairings'
+    })
+
+    document.getElementById('detect-btn')?.addEventListener('click', async () => {
+      const msg = document.getElementById('detect-msg')!
+      msg.textContent = 'Detecting...'
+      msg.classList.remove('hidden')
+      const res = await fetch(`${API_BASE}/pairings/${pairingId}/detect`, { method: 'POST', headers: getAuthHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        msg.textContent = `Found ${data.message.split(' ')[1]} shared anime!`
+        setTimeout(() => { window.location.reload() }, 1000)
+      } else {
+        msg.textContent = 'Detection failed'
+      }
     })
 
     if (isNew) attachPickerSearch('seiyuuA')
