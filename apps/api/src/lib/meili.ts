@@ -1,9 +1,10 @@
 import { Meilisearch } from 'meilisearch'
 
-export const meili = new Meilisearch({
-  host: process.env.MEILI_URL ?? 'http://localhost:7700',
-  apiKey: process.env.MEILI_MASTER_KEY ?? 'dev_master_key'
-})
+const host = process.env.MEILI_URL || 'http://localhost:7700'
+const apiKey = process.env.MEILI_MASTER_KEY
+if (!apiKey) throw new Error('MEILI_MASTER_KEY environment variable is required')
+
+export const meili = new Meilisearch({ host, apiKey })
 
 export async function setupMeiliIndexes() {
   // create seiyuu index if not exists

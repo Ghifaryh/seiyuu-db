@@ -6,7 +6,15 @@ import { runStartupSync, scheduleCron } from './sync/cron'
 import { setupMeiliIndexes } from './lib/meili'
 
 const app = new Elysia()
-  .use(cors())
+  .use(cors({
+    origin: [
+      'http://localhost:4321',
+      'http://localhost:4322',
+      'https://seiyuu-db.gehu.me',
+    ],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    credentials: true,
+  }))
   .use(swagger({
     documentation: {
       info: {

@@ -2,8 +2,12 @@ import { db } from './db/client'
 import { appUser } from './db/schema'
 import { eq } from 'drizzle-orm'
 
-const email = process.env.ADMIN_EMAIL ?? 'admin@seiyuu.db'
-const password = process.env.ADMIN_PASSWORD ?? 'admin123'
+const email = process.env.ADMIN_EMAIL
+const password = process.env.ADMIN_PASSWORD
+if (!email || !password) {
+  console.error('ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required')
+  process.exit(1)
+}
 
 const hash = await Bun.password.hash(password)
 

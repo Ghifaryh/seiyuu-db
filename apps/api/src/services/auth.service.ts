@@ -11,11 +11,6 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
   return await Bun.password.verify(password, hash)
 }
 
-function generateToken(userId: string, role: string): string {
-  // simple JWT using Bun — we'll use a proper plugin next
-  return btoa(JSON.stringify({ userId, role, exp: Date.now() + 1000 * 60 * 60 * 24 }))
-}
-
 export async function register(email: string, password: string) {
   const existing = await db
     .select()
