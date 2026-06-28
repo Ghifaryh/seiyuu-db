@@ -88,7 +88,7 @@ try {
 
           <div class='flex flex-wrap'>
             {anime.cast.map((c) => (
-              <div class='flex items-center gap-2.5 px-4 py-3 border-r border-b border-neutral-800 flex-1 min-w-[180px]'>
+              <div data-seiyuu={c.seiyuu.id} class='cast-link flex items-center gap-2.5 px-4 py-3 border-r border-b border-neutral-800 flex-1 min-w-[180px] cursor-pointer hover:bg-neutral-900/50'>
                 <Avatar name={c.seiyuu.nameRomaji} imageUrl={c.seiyuu.imageUrl} size='sm' />
                 <div class='min-w-0'>
                   <div class='text-sm font-medium truncate'>{c.seiyuu.nameRomaji}</div>
@@ -126,5 +126,15 @@ try {
   seasonSelect?.addEventListener('change', () => {
     const [year, quarter] = seasonSelect.value.split('-')
     window.location.href = `/season/${year}/${quarter}`
+  })
+
+  document.addEventListener('click', (e) => {
+    const castLink = (e.target as HTMLElement).closest('.cast-link') as HTMLElement | null
+    if (castLink) {
+      e.preventDefault()
+      e.stopPropagation()
+      const id = castLink.getAttribute('data-seiyuu')
+      if (id) window.location.href = `/seiyuu/${id}`
+    }
   })
 </script>
