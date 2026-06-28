@@ -43,7 +43,11 @@ try {
 const season = anime ? formatSeason(anime.seasonYear, anime.seasonQuarter) : ''
 ---
 
-<BaseLayout title={anime ? `${anime.titleRomaji} — seiyuu.db` : 'Not Found — seiyuu.db'}>
+<BaseLayout 
+  title={anime ? `${anime.titleRomaji} — seiyuu.db` : 'Not Found — seiyuu.db'}
+  description={anime ? `${anime.titleRomaji}${anime.titleNative ? ` (${anime.titleNative})` : ''}${anime.studio ? ` · ${anime.studio}` : ''}${season ? ` · ${season}` : ''} — ${anime.cast.length} voice actors` : undefined}
+  ogImage={anime?.coverUrl ?? undefined}
+>
   <Nav slot='nav' />
   <NewsTicker slot='nav' />
 

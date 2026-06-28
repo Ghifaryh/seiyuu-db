@@ -43,7 +43,10 @@ const firstYear = sharedYears.length > 0 ? Math.min(...sharedYears) : null
 const recentYear = sharedYears.length > 0 ? Math.max(...sharedYears) : null
 ---
 
-<BaseLayout title={pairing?.pairName ? `${pairing.pairName} — seiyuu.db` : 'Pairing — seiyuu.db'}>
+<BaseLayout 
+  title={pairing?.pairName ? `${pairing.pairName} — seiyuu.db` : 'Pairing — seiyuu.db'}
+  description={pairing ? `${pairing.seiyuuA.nameRomaji} & ${pairing.seiyuuB?.nameRomaji ?? '?'} — ${pairing.sharedCount} shared anime${pairing.description ? `. ${pairing.description}` : ''}` : undefined}
+>
   <Nav slot='nav' />
   <NewsTicker slot='nav' />
 

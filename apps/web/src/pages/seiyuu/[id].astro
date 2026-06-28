@@ -96,7 +96,11 @@ const thisSeasonRoles = roles.filter(r =>
 ).length
 ---
 
-<BaseLayout title={s ? `${s.nameRomaji} — seiyuu.db` : 'Not Found — seiyuu.db'}>
+<BaseLayout 
+  title={s ? `${s.nameRomaji} — seiyuu.db` : 'Not Found — seiyuu.db'}
+  description={s ? `${s.nameRomaji}${s.nameKanji ? ` (${s.nameKanji})` : ''} — ${totalRoles} voice roles${enc?.biography ? `. ${enc.biography.slice(0, 120)}` : ''}` : undefined}
+  ogImage={s?.imageUrl ?? undefined}
+>
   <Nav slot='nav' />
   <NewsTicker slot='nav' />
 
