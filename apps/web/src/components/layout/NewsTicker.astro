@@ -1,70 +1,101 @@
 ---
 interface NewsItem {
-  title: string
-  category: string | null
+	title: string
+	category: string | null
 }
 
 let newsItems: { icon: string; text: string }[] = [
-  { icon: '🎤', text: 'Aoi Yuuki announced for lead role in Summer 2026 NHK series' },
-  { icon: '🏢', text: 'Hiroshi Kamiya joins new agency following contract renewal' },
-  { icon: '🎤', text: 'Kana Hanazawa cast as lead in upcoming original anime' },
+	{
+		icon: '🎤',
+		text: 'Aoi Yuuki announced for lead role in Summer 2026 NHK series',
+	},
+	{
+		icon: '🏢',
+		text: 'Hiroshi Kamiya joins new agency following contract renewal',
+	},
+	{
+		icon: '🎤',
+		text: 'Kana Hanazawa cast as lead in upcoming original anime',
+	},
 ]
 
 const apiBase = process.env.API_URL || 'http://localhost:3001'
 
 try {
-  const res = await fetch(`${apiBase}/api/v1/news?limit=5`)
-  if (res.ok) {
-    const data = await res.json() as NewsItem[]
-    if (data.length > 0) {
-      newsItems = data.map(item => ({
-        icon: item.category === 'agency' ? '🏢' : '🎤',
-        text: item.title,
-      }))
-    }
-  }
+	const res = await fetch(`${apiBase}/api/v1/news?limit=5`)
+	if (res.ok) {
+		const data = (await res.json()) as NewsItem[]
+		if (data.length > 0) {
+			newsItems = data.map((item) => ({
+				icon: item.category === 'agency' ? '🏢' : '🎤',
+				text: item.title,
+			}))
+		}
+	}
 } catch {
-  // keep fallback
+	// keep fallback
 }
 
 // render 4 copies to guarantee seamless loop
 const loopItems = [...newsItems, ...newsItems, ...newsItems, ...newsItems]
 ---
 
-<a href='/news'
-  class='block bg-teal-950/40 border-b border-teal-800/40 px-6 py-2 overflow-hidden hover:bg-teal-950/60 transition-colors'>
-  <div class='flex items-center gap-4'>
-    <span class='text-xs font-medium px-2.5 py-1 rounded-full bg-teal-600 text-teal-50 whitespace-nowrap flex-shrink-0'>
-      News
-    </span>
+<a
+	href='/news'
+	class='block bg-teal-950/40 border-b border-teal-800/40 px-6 py-2 overflow-hidden hover:bg-teal-950/60 transition-colors'
+>
+	<div class='flex items-center gap-4'>
+		<span
+			class='text-xs font-medium px-2.5 py-1 rounded-full bg-teal-600 text-teal-50 whitespace-nowrap flex-shrink-0'
+		>
+			News
+		</span>
 
-    <div class='ticker-track flex-1 overflow-hidden'>
-      <div class='ticker-content flex gap-10 whitespace-nowrap'>
-        {loopItems.map((item) => (
-          <span class='text-sm text-teal-200 flex items-center gap-2 flex-shrink-0'>
-            <span>{item.icon}</span> {item.text}
-          </span>
-        ))}
-      </div>
-    </div>
-  </div>
+		<div class='ticker-track flex-1 overflow-hidden'>
+			<div class='ticker-content flex gap-10 whitespace-nowrap'>
+				{
+					loopItems.map((item) => (
+						<span class='text-sm text-teal-200 flex items-center gap-2 flex-shrink-0'>
+							<span>{item.icon}</span> {item.text}
+						</span>
+					))
+				}
+			</div>
+		</div>
+	</div>
 </a>
 
 <style>
-  .ticker-track {
-    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-  }
+	.ticker-track {
+		mask-image: linear-gradient(
+			to right,
+			transparent 0%,
+			black 5%,
+			black 95%,
+			transparent 100%
+		);
+	}
 
-  .ticker-content {
-    animation: ticker-scroll 40s linear infinite;
-  }
+	.ticker-content {
+		animation: ticker-scroll 30s linear infinite;
+	}
 
-  .ticker-content:hover {
-    animation-play-state: paused;
-  }
+	.ticker-content:hover {
+		animation-play-state: paused;
+	}
 
-  @keyframes ticker-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-75%); }
-  }
+	@media (max-width: 640px) {
+		.ticker-content {
+			animation-duration: 5s;
+		}
+	}
+
+	@keyframes ticker-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-75%);
+		}
+	}
 </style>
