@@ -63,6 +63,15 @@ const enc = profile?.seiyuu_enrichment
 const initials = s ? getInitials(s.nameRomaji) : ''
 const nameAlt = s?.nameAliases?.[0] ?? ''
 
+// sort roles by season (newest first), then group
+const seasonOrder: Record<string, number> = { winter: 1, spring: 2, summer: 3, fall: 4 }
+roles.sort((a, b) => {
+  const ya = a.anime.seasonYear ?? 0
+  const yb = b.anime.seasonYear ?? 0
+  if (yb !== ya) return yb - ya
+  return (seasonOrder[b.anime.seasonQuarter ?? ''] ?? 0) - (seasonOrder[a.anime.seasonQuarter ?? ''] ?? 0)
+})
+
 const groupedRoles = roles.reduce((acc: Record<string, RoleItem[]>, role) => {
   const season = formatSeason(role.anime.seasonYear, role.anime.seasonQuarter)
   if (!acc[season]) acc[season] = []
