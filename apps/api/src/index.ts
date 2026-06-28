@@ -3,6 +3,7 @@ import { cors } from '@elysiajs/cors'
 import { swagger } from '@elysiajs/swagger'
 import { v1Routes } from './routes/v1'
 import { runStartupSync, scheduleCron } from './sync/cron'
+import { setupMeiliIndexes } from './lib/meili'
 
 const app = new Elysia()
   .use(cors())
@@ -23,8 +24,13 @@ const app = new Elysia()
 
 console.log(`API running at ${app.server?.hostname}:${app.server?.port}`)
 
-// run sync after server starts (skip in dev with SYNC_ON_STARTUP=false)
+// always setup MeiliSearch indexes on startup
+setupMeiliIndexes().catch(console.error)
+
+// run sync after server starts (skip with SYNC_ON_STARTUP=false)
 if (process.env.SYNC_ON_STARTUP !== 'false') {
   runStartupSync().catch(console.error)
   scheduleCron()
 }
+
+scheduleCron()

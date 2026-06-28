@@ -6,6 +6,8 @@ import Avatar from '../../components/Avatar.astro'
 import Nav from '../../components/layout/Nav.astro'
 import NewsTicker from '../../components/layout/NewsTicker.astro'
 
+const apiBase = process.env.API_URL || 'http://localhost:3001'
+
 const { id } = Astro.params
 
 interface PairingDetail {
@@ -29,7 +31,7 @@ let pairing: PairingDetail | null = null
 let error = ''
 
 try {
-  const res = await fetch(`/api/v1/pairings/${id}`)
+  const res = await fetch(`${apiBase}/api/v1/pairings/${id}`)
   if (res.ok) pairing = await res.json()
   else error = 'Pairing not found'
 } catch {
