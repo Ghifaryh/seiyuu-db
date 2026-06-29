@@ -104,8 +104,8 @@ import AdminGuard from '../../components/admin/AdminGuard.astro'
 			const pairData = await pairRes.json()
 
 			document.getElementById('stat-seiyuu')!.textContent = String(seiyuuData.total ?? '—')
-			document.getElementById('stat-news')!.textContent = String(Array.isArray(newsData) ? newsData.length : '—')
-			document.getElementById('stat-pairings')!.textContent = String(Array.isArray(pairData) ? pairData.length : '—')
+		document.getElementById('stat-news')!.textContent = String(newsData.total ?? (Array.isArray(newsData) ? newsData.length : '—'))
+		document.getElementById('stat-pairings')!.textContent = String(pairData.total ?? (Array.isArray(pairData) ? pairData.length : '—'))
 
 			// count anime from season endpoints
 			let animeTotal = 0

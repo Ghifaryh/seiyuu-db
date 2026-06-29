@@ -24,7 +24,8 @@ const apiBase = process.env.API_URL || 'http://localhost:3001'
 try {
 	const res = await fetch(`${apiBase}/api/v1/news?limit=5`)
 	if (res.ok) {
-		const data = (await res.json()) as NewsItem[]
+		const json = await res.json() as { data?: NewsItem[] } | NewsItem[]
+		const data = Array.isArray(json) ? json : (json.data || [])
 		if (data.length > 0) {
 			newsItems = data.map((item) => ({
 				icon: item.category === 'agency' ? '🏢' : '🎤',

@@ -1,7 +1,6 @@
 import { db } from '../db/client'
 import { newsPost, seiyuu } from '../db/schema'
 import { eq, desc, sql, and } from 'drizzle-orm'
-import { or } from 'drizzle-orm'
 
 export async function getNews(category?: string, limit = 20) {
   const conditions = category
@@ -31,10 +30,14 @@ export async function getNews(category?: string, limit = 20) {
     .orderBy(desc(newsPost.publishedAt))
     .limit(limit)
 
-  return results.map(r => ({
-    ...r.news,
-    seiyuu: r.seiyuu ?? null,
-  }))
+  // count total
+  const [countResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(newsPost)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+  const total = Number(countResult?.count ?? 0)
+
+  return { data: results.map(r => ({ ...r.news, seiyuu: r.seiyuu ?? null })), total }
 }
 
 export async function getNewsById(id: string) {

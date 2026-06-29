@@ -21,7 +21,10 @@ interface PairingRow {
 let pairings: PairingRow[] = []
 try {
   const res = await fetch(`${apiBase}/api/v1/pairings?page=1&limit=24`)
-  if (res.ok) pairings = await res.json()
+  if (res.ok) {
+    const json = await res.json()
+    pairings = json.data ?? json
+  }
 } catch {}
 ---
 

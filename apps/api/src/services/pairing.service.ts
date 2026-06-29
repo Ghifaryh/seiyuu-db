@@ -1,6 +1,6 @@
 import { db } from '../db/client'
 import { pairing, pairingAnime, seiyuu, anime, character, voiceRole } from '../db/schema'
-import { eq, or, desc, inArray } from 'drizzle-orm'
+import { eq, or, desc, inArray, sql } from 'drizzle-orm'
 
 export async function getAllPairings(page = 1, limit = 24) {
   const offset = (page - 1) * limit
@@ -28,6 +28,12 @@ export async function getAllPairings(page = 1, limit = 24) {
     .limit(limit)
     .offset(offset)
 
+  // count total
+  const [countResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(pairing)
+  const total = Number(countResult?.count ?? 0)
+
   // fetch seiyuuB separately to avoid self-join alias complexity
   const pairingIds = results.map(r => r.pairing.id)
   const seiyuuBData = pairingIds.length > 0
@@ -48,10 +54,7 @@ export async function getAllPairings(page = 1, limit = 24) {
 
   const seiyuuBMap = new Map(seiyuuBData.map(r => [r.pairingId, r.seiyuuB]))
 
-  return results.map(r => ({
-    ...r,
-    seiyuuB: seiyuuBMap.get(r.pairing.id) ?? null
-  }))
+  return { data: results.map(r => ({ ...r, seiyuuB: seiyuuBMap.get(r.pairing.id) ?? null })), total, page, limit }
 }
 
 export async function getPairingById(id: string) {

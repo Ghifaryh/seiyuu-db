@@ -35,7 +35,8 @@ import AdminGuard from '../../../components/admin/AdminGuard.astro'
     const container = document.getElementById('news-list')!
     try {
       const res = await fetch(`${API_BASE}/news?limit=50`)
-      const posts: any[] = await res.json()
+      const json = await res.json()
+      const posts: any[] = json.data ?? json
 
       container.innerHTML = posts.map(p => {
         const seiyuuName = p.seiyuu?.nameRomaji ?? '—'

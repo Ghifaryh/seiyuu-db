@@ -18,7 +18,10 @@ interface NewsItem {
 let newsPosts: NewsItem[] = []
 try {
   const res = await fetch(`${apiBase}/api/v1/news?limit=20`)
-  if (res.ok) newsPosts = await res.json()
+  if (res.ok) {
+    const json = await res.json()
+    newsPosts = json.data ?? json
+  }
 } catch {}
 
 const categoryStyles: Record<string, string> = {
