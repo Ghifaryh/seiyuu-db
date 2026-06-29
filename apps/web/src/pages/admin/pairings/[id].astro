@@ -106,8 +106,8 @@ const isNew = id === 'new'
     const msg = document.getElementById('save-msg')!
     document.getElementById('save-btn')?.addEventListener('click', async () => {
       msg.classList.add('hidden')
-      const pairName = (document.getElementById('pairName') as HTMLInputElement).value.trimEnd() || null
-      const description = (document.getElementById('description') as HTMLTextAreaElement).value.trimEnd() || null
+      const pairName = (document.getElementById('pairName') as HTMLInputElement).value.trimEnd() || undefined
+      const description = (document.getElementById('description') as HTMLTextAreaElement).value.trimEnd() || undefined
 
       if (isNew) {
         const seiyuuAId = (document.getElementById('seiyuuA') as HTMLInputElement).value
