@@ -1,7 +1,8 @@
 ---
 interface NewsItem {
-	title: string
-	category: string | null
+  title: string
+  category: string | null
+  seiyuus?: { nameRomaji: string }[]
 }
 
 let newsItems: { icon: string; text: string }[] = [

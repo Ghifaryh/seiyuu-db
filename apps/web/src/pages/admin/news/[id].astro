@@ -32,7 +32,16 @@ const isNewEditor = id === 'new'
           <option value='roles'>Role announcement</option>
           <option value='agency'>Agency news</option>
         </select>
-        <input id='edit-seiyuu' placeholder='Seiyuu ID (optional)' class='text-sm flex-1 px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+      </div>
+
+      <div>
+        <label class='text-xs text-neutral-500 block mb-1.5'>Tagged seiyuu</label>
+        <div id='seiyuu-tags' class='flex flex-wrap gap-1 mb-2'></div>
+        <div class='relative'>
+          <input type='text' id='edit-seiyuu-search' placeholder='Search seiyuu to tag...' autocomplete='off'
+            class='text-sm w-full px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+          <div id='seiyuu-results' class='absolute top-full left-0 right-0 mt-1 border border-neutral-700 rounded-md bg-neutral-950 max-h-40 overflow-y-auto z-10 hidden'></div>
+        </div>
       </div>
 
       <div>
@@ -72,6 +81,25 @@ const isNewEditor = id === 'new'
   const sourceInput = document.getElementById('edit-source') as HTMLInputElement
   const hasBodyToggle = document.getElementById('has-body-toggle') as HTMLInputElement
   const sourceHint = document.getElementById('source-hint') as HTMLParagraphElement
+  const taggedSeiyuu: { id: string; name: string }[] = []
+
+  function renderTags() {
+    const container = document.getElementById('seiyuu-tags')!
+    container.innerHTML = taggedSeiyuu.map(s => `
+      <span class='inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-teal-900/50 text-teal-300'>
+        ${s.name}
+        <button class='remove-tag text-teal-300 hover:text-red-400 ml-0.5' data-id='${s.id}'>&times;</button>
+      </span>
+    `).join('')
+    container.querySelectorAll('.remove-tag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id')!
+        const idx = taggedSeiyuu.findIndex(s => s.id === id)
+        if (idx >= 0) taggedSeiyuu.splice(idx, 1)
+        renderTags()
+      })
+    })
+  }
 
   function toggleBody() {
     const hasBody = hasBodyToggle.checked
@@ -93,8 +121,11 @@ const isNewEditor = id === 'new'
       if (p.message) return
       ;(document.getElementById('edit-title') as HTMLInputElement).value = p.title || ''
       ;(document.getElementById('edit-category') as HTMLSelectElement).value = p.category || 'roles'
-      ;(document.getElementById('edit-seiyuu') as HTMLInputElement).value = p.seiyuu?.id || ''
       sourceInput.value = p.sourceUrl || ''
+      if (p.seiyuus?.length) {
+        taggedSeiyuu.push(...p.seiyuus.map((s: any) => ({ id: s.id, name: s.nameRomaji })))
+        renderTags()
+      }
       if (p.body) {
         bodyEl.value = p.body
         hasBodyToggle.checked = true
@@ -109,11 +140,51 @@ const isNewEditor = id === 'new'
 
   loadPost()
 
+  loadPost()
+
+  // seiyuu search picker
+  const seiyuuSearch = document.getElementById('edit-seiyuu-search') as HTMLInputElement
+  const seiyuuResults = document.getElementById('seiyuu-results')!
+  let seiyuuTimer: any
+
+  seiyuuSearch.addEventListener('input', () => {
+    clearTimeout(seiyuuTimer)
+    const q = seiyuuSearch.value.trim()
+    if (q.length < 2) { seiyuuResults.classList.add('hidden'); return }
+    seiyuuTimer = setTimeout(async () => {
+      const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=6`)
+      if (!res.ok) { seiyuuResults.classList.add('hidden'); return }
+      const data = await res.json()
+      const items = data.results || []
+      seiyuuResults.innerHTML = items.length
+        ? items.map((s: any) => `<div class='flex items-center gap-2 px-3 py-2 text-sm hover:bg-neutral-800 cursor-pointer' data-id="${s.id}" data-name="${s.nameRomaji}">${s.imageUrl ? `<img src="${s.imageUrl}" class="w-6 h-6 rounded-full object-cover" />` : ''}${s.nameRomaji} ${s.nameKanji ? `<span class="text-neutral-500 text-xs">${s.nameKanji}</span>` : ''}</div>`).join('')
+        : '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>'
+      seiyuuResults.querySelectorAll('div[data-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-id')!
+          const name = el.getAttribute('data-name')!
+          if (!taggedSeiyuu.find(s => s.id === id)) {
+            taggedSeiyuu.push({ id, name })
+            renderTags()
+          }
+          seiyuuSearch.value = ''
+          seiyuuResults.classList.add('hidden')
+        })
+      })
+      seiyuuResults.classList.remove('hidden')
+    }, 250)
+  })
+  document.addEventListener('click', e => {
+    if (!seiyuuSearch.contains(e.target as Node) && !seiyuuResults.contains(e.target as Node)) {
+      seiyuuResults.classList.add('hidden')
+    }
+  })
+
   document.getElementById('save-btn')?.addEventListener('click', async () => {
     const title = (document.getElementById('edit-title') as HTMLInputElement).value.trim()
     const body = bodyEl.value.trim()
     const category = (document.getElementById('edit-category') as HTMLSelectElement).value
-    const seiyuuId = (document.getElementById('edit-seiyuu') as HTMLInputElement).value.trim() || null
+    const seiyuuIds = taggedSeiyuu.length > 0 ? taggedSeiyuu.map(s => s.id) : undefined
     const sourceUrl = normalizeUrl(sourceInput.value)
     const errorEl = document.getElementById('edit-error')!
     const successEl = document.getElementById('edit-success')!
@@ -134,7 +205,7 @@ const isNewEditor = id === 'new'
       const user = JSON.parse(localStorage.getItem('seiyuu_user') || '{}')
       const res = await fetch(`${API_BASE}/news`, {
         method: 'POST', headers: getAuthHeaders(),
-        body: JSON.stringify({ title, body, category, seiyuuId, sourceUrl, createdBy: user.id }),
+        body: JSON.stringify({ title, body: body || undefined, category, seiyuuIds, sourceUrl: sourceUrl || undefined, createdBy: user.id }),
       })
       if (res.ok) {
         successEl.textContent = 'Published! Redirecting...'
@@ -149,7 +220,7 @@ const isNewEditor = id === 'new'
     } else {
       const res = await fetch(`${API_BASE}/news/${postId}`, {
         method: 'PATCH', headers: getAuthHeaders(),
-        body: JSON.stringify({ title, body: body || undefined, category, seiyuuId: seiyuuId || undefined, sourceUrl: sourceUrl || undefined }),
+        body: JSON.stringify({ title, body: body || undefined, category, seiyuuIds: seiyuuIds || undefined, sourceUrl: sourceUrl || undefined }),
       })
       if (res.ok) {
         successEl.textContent = 'Saved!'

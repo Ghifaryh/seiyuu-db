@@ -12,7 +12,7 @@ interface NewsItem {
   category: string | null
   sourceUrl: string | null
   publishedAt: string | null
-  seiyuu: { id: string; nameRomaji: string; nameKanji: string | null; imageUrl: string | null } | null
+  seiyuus: { id: string; nameRomaji: string; nameKanji: string | null; imageUrl: string | null }[] | null
 }
 
 let newsPosts: NewsItem[] = []
@@ -62,8 +62,8 @@ function fixUrl(u: string) {
         <a href={href} target={target} rel={rel} data-category={post.category ?? ''}
           class='news-item block border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
           <div class='flex items-start gap-4'>
-            {post.seiyuu ? (
-              <Avatar name={post.seiyuu.nameRomaji} imageUrl={post.seiyuu.imageUrl} size='md' />
+            {post.seiyuus?.length ? (
+              <Avatar name={post.seiyuus[0].nameRomaji} imageUrl={post.seiyuus[0].imageUrl} size='md' />
             ) : (
               <div class='w-10 h-10 rounded-full bg-teal-900/60 flex items-center justify-center text-sm font-medium text-teal-300 flex-shrink-0'>?</div>
             )}

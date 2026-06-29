@@ -1,6 +1,6 @@
 import { db } from '../db/client'
-import { newsPost, seiyuu } from '../db/schema'
-import { eq, desc, sql, and } from 'drizzle-orm'
+import { newsPost, seiyuu, newsSeiyuu } from '../db/schema'
+import { eq, desc, sql, and, inArray } from 'drizzle-orm'
 
 export async function getNews(category?: string, limit = 20) {
   const conditions = category
@@ -25,10 +25,23 @@ export async function getNews(category?: string, limit = 20) {
       }
     })
     .from(newsPost)
-    .leftJoin(seiyuu, eq(newsPost.seiyuuId, seiyuu.id))
+    .leftJoin(newsSeiyuu, eq(newsPost.id, newsSeiyuu.newsId))
+    .leftJoin(seiyuu, eq(newsSeiyuu.seiyuuId, seiyuu.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(newsPost.publishedAt))
     .limit(limit)
+
+  // group by news post, collecting seiyuus
+  const grouped: Record<string, any> = {}
+  for (const r of results) {
+    const nid = r.news.id
+    if (!grouped[nid]) {
+      grouped[nid] = { ...r.news, seiyuus: [] }
+    }
+    if (r.seiyuu?.id) {
+      grouped[nid].seiyuus.push(r.seiyuu)
+    }
+  }
 
   // count total
   const [countResult] = await db
@@ -37,11 +50,11 @@ export async function getNews(category?: string, limit = 20) {
     .where(conditions.length > 0 ? and(...conditions) : undefined)
   const total = Number(countResult?.count ?? 0)
 
-  return { data: results.map(r => ({ ...r.news, seiyuu: r.seiyuu ?? null })), total }
+  return { data: Object.values(grouped), total }
 }
 
 export async function getNewsById(id: string) {
-  const [result] = await db
+  const results = await db
     .select({
       news: {
         id: newsPost.id,
@@ -60,28 +73,38 @@ export async function getNewsById(id: string) {
       }
     })
     .from(newsPost)
-    .leftJoin(seiyuu, eq(newsPost.seiyuuId, seiyuu.id))
+    .leftJoin(newsSeiyuu, eq(newsPost.id, newsSeiyuu.newsId))
+    .leftJoin(seiyuu, eq(newsSeiyuu.seiyuuId, seiyuu.id))
     .where(eq(newsPost.id, id))
 
-  if (!result) return null
+  if (results.length === 0) return null
 
+  const seiyuus = results.filter(r => r.seiyuu?.id).map(r => r.seiyuu)
   return {
-    ...result.news,
-    seiyuu: result.seiyuu ?? null,
+    ...results[0].news,
+    seiyuus,
   }
 }
 
 export async function createNewsPost(data: {
   title: string
-  body: string
+  body?: string
   category?: string
-  seiyuuId?: string
+  seiyuuIds?: string[]
+  sourceUrl?: string
   createdBy: string
 }) {
+  const { seiyuuIds, ...postData } = data
   const [result] = await db
     .insert(newsPost)
-    .values(data)
+    .values(postData)
     .returning()
+
+  if (seiyuuIds?.length) {
+    for (const sid of seiyuuIds) {
+      await db.insert(newsSeiyuu).values({ newsId: result.id, seiyuuId: sid })
+    }
+  }
 
   return result
 }
@@ -99,14 +122,25 @@ export async function updateNewsPost(id: string, data: {
   title?: string
   body?: string
   category?: string
-  seiyuuId?: string | null
+  seiyuuIds?: string[] | null
   sourceUrl?: string | null
 }) {
+  const { seiyuuIds, ...postData } = data
   const [result] = await db
     .update(newsPost)
-    .set(data)
+    .set(postData)
     .where(eq(newsPost.id, id))
     .returning()
+
+  if (seiyuuIds !== undefined) {
+    // replace all seiyuu links
+    await db.delete(newsSeiyuu).where(eq(newsSeiyuu.newsId, id))
+    if (seiyuuIds) {
+      for (const sid of seiyuuIds) {
+        await db.insert(newsSeiyuu).values({ newsId: id, seiyuuId: sid })
+      }
+    }
+  }
 
   return result ?? null
 }

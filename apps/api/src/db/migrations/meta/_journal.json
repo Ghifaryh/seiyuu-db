@@ -43,6 +43,13 @@
       "when": 1782699229279,
       "tag": "0005_military_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782702409678,
+      "tag": "0006_neat_mister_fear",
+      "breakpoints": true
     }
   ]
 }

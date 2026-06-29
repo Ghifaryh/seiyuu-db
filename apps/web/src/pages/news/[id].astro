@@ -16,7 +16,7 @@ interface Post {
   category: string | null
   sourceUrl: string | null
   publishedAt: string | null
-  seiyuu: { id: string; nameRomaji: string; nameKanji: string | null; imageUrl: string | null } | null
+  seiyuus: { id: string; nameRomaji: string; nameKanji: string | null; imageUrl: string | null }[] | null
 }
 
 let post: Post | null = null
@@ -74,20 +74,27 @@ if (post && !hasBody && post.sourceUrl) {
 
       <h1 class='text-2xl font-medium leading-snug mb-6'>{post.title}</h1>
 
-      {post.seiyuu && (
-        <a href={`/seiyuu/${post.seiyuu.id}`}
-          class='flex items-center gap-3 border border-neutral-800 rounded-lg px-4 py-3 mb-8 bg-neutral-900/50 hover:border-neutral-600 transition-colors w-fit'>
-          <Avatar name={post.seiyuu.nameRomaji} imageUrl={post.seiyuu.imageUrl} size='md' />
-          <div>
-            <div class='text-xs text-neutral-500'>Related seiyuu</div>
-            <div class='text-sm font-medium'>{post.seiyuu.nameRomaji}</div>
-          </div>
-        </a>
-      )}
-
       <div class='text-sm text-neutral-300 leading-relaxed flex flex-col gap-4 mb-8'>
         {post.body.split('\n\n').map((paragraph) => <p>{paragraph}</p>)}
       </div>
+
+      {post.seiyuus?.length ? (
+        <div class='border-t border-neutral-800 pt-5 mt-4'>
+          <p class='text-xs text-neutral-500 mb-3'>Mentioned seiyuu</p>
+          <div class='flex flex-wrap gap-2'>
+            {post.seiyuus.map(s => (
+              <a href={`/seiyuu/${s.id}`}
+                class='flex items-center gap-3 border border-neutral-800 rounded-lg px-4 py-3 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
+                <Avatar name={s.nameRomaji} imageUrl={s.imageUrl} size='md' />
+                <div>
+                  <div class='text-sm font-medium'>{s.nameRomaji}</div>
+                  <div class='text-xs text-neutral-500'>{s.nameKanji}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {post.sourceUrl && (
         <a href={post.sourceUrl.startsWith('http') ? post.sourceUrl : 'https://' + post.sourceUrl} target='_blank' rel='noopener noreferrer'

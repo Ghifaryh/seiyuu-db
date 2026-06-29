@@ -39,7 +39,7 @@ import AdminGuard from '../../../components/admin/AdminGuard.astro'
       const posts: any[] = json.data ?? json
 
       container.innerHTML = posts.map(p => {
-        const seiyuuName = p.seiyuu?.nameRomaji ?? '—'
+        const seiyuuName = p.seiyuus?.length ? p.seiyuus.map((s: any) => s.nameRomaji).join(', ') : '—'
         const date = p.publishedAt
           ? new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : ''
