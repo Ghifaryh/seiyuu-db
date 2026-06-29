@@ -173,7 +173,7 @@ const { id } = Astro.params
 
   function refreshPreview() {
     const frame = document.getElementById('preview-frame') as HTMLIFrameElement | null
-    if (frame) frame.src = frame.src
+    if (frame) frame.src = frame.src.split('?')[0] + '?t=' + Date.now()
   }
 
   const isSingerCheckbox = document.getElementById('isSinger') as HTMLInputElement
@@ -440,6 +440,7 @@ const { id } = Astro.params
                   <option value='supporting' ${game?.roleType === 'supporting' ? 'selected' : ''}>Supporting</option>
                 </select>
                 <button class='save-edit text-xs px-2 py-1 rounded-md bg-teal-600 text-teal-50' data-save='${roleId}' data-save-type='${type}'>Save</button>
+                <button class='cancel-edit text-xs px-2 py-1 rounded-md border border-neutral-700 text-neutral-400 ml-1' data-cancel='${roleId}'>Cancel</button>
               `
             } else {
               const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/roles`)
@@ -452,6 +453,7 @@ const { id } = Astro.params
                   <option value='supporting' ${role?.roleType === 'supporting' ? 'selected' : ''}>Supporting</option>
                 </select>
                 <button class='save-edit text-xs px-2 py-1 rounded-md bg-teal-600 text-teal-50' data-save='${roleId}' data-save-type='${type}'>Save</button>
+                <button class='cancel-edit text-xs px-2 py-1 rounded-md border border-neutral-700 text-neutral-400 ml-1' data-cancel='${roleId}'>Cancel</button>
               `
             }
           }
@@ -463,37 +465,27 @@ const { id } = Astro.params
           const roleId = btn.getAttribute('data-delete-role')!
           const type = btn.getAttribute('data-delete-type')!
           const parent = btn.parentElement!
-          const originalHtml = parent.innerHTML
 
           parent.innerHTML = `
-            <span class='text-xs text-red-400 mr-1'>Delete?</span>
-            <button data-confirm='${roleId}' data-confirm-type='${type}' class='text-xs px-2 py-0.5 rounded-md bg-red-600 text-red-50'>Yes</button>
-            <button data-cancel class='text-xs px-2 py-0.5 rounded-md border border-neutral-700 text-neutral-400 ml-1'>No</button>
+            <button class='role-confirm-yes text-xs px-2 py-1 rounded-md bg-red-600 text-red-50 font-medium cursor-pointer' data-confirm-role='${roleId}' data-confirm-type='${type}'>Yes, delete</button>
+            <button class='role-confirm-no text-xs px-2 py-1 rounded-md border border-neutral-700 text-neutral-400 ml-1 cursor-pointer'>Cancel</button>
           `
-
-          const handleConfirm = async (ev: Event) => {
-            parent.removeEventListener('click', handleConfirm)
-            const b = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null
-            if (b?.hasAttribute('data-confirm')) {
-              const cId = b.getAttribute('data-confirm')!
-              const cType = b.getAttribute('data-confirm-type')!
-              const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/${cType}-roles/${cId}`, {
-                method: 'DELETE', headers: getAuthHeaders(),
-              })
-              if (res.ok) { loadManualRoles(); refreshPreview() } else {
-                parent.innerHTML = originalHtml
-                loadManualRoles()
-              }
-            }
-          }
-          parent.addEventListener('click', handleConfirm)
         })
       })
 
-      // save inline edits
+      // save and cancel inline edits
       container.addEventListener('click', async (e) => {
         const saveBtn = (e.target as HTMLElement).closest('.save-edit') as HTMLElement | null
+        const cancelBtn = (e.target as HTMLElement).closest('.cancel-edit') as HTMLElement | null
+        if (!saveBtn && !cancelBtn) return
         if (!saveBtn) return
+        if (cancelBtn) {
+          const cancelId = cancelBtn.getAttribute('data-cancel')!
+          const form = document.getElementById(`edit-form-${cancelId}`)
+          if (form) form.classList.add('hidden')
+          return
+        }
+
         e.stopPropagation()
         const roleId = saveBtn.getAttribute('data-save')!
         const type = saveBtn.getAttribute('data-save-type')!
@@ -521,6 +513,28 @@ const { id } = Astro.params
   }
 
   loadManualRoles()
+
+  // role delete confirm delegation
+  document.addEventListener('click', async (e) => {
+    const t = e.target as HTMLElement
+    const yesBtn = t.closest('.role-confirm-yes') as HTMLElement | null
+    const noBtn = t.closest('.role-confirm-no') as HTMLElement | null
+    if (!yesBtn && !noBtn) return
+
+    if (yesBtn) {
+      const roleId = yesBtn.getAttribute('data-confirm-role')!
+      const type = yesBtn.getAttribute('data-confirm-type')!
+      const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/${type}-roles/${roleId}`, {
+        method: 'DELETE', headers: getAuthHeaders(),
+      })
+      if (res.ok) { loadManualRoles(); refreshPreview() }
+      else loadManualRoles()
+    }
+
+    if (noBtn) {
+      loadManualRoles()
+    }
+  })
 
   // game title autocomplete
   const gameTitleInput = document.getElementById('game-title') as HTMLInputElement
