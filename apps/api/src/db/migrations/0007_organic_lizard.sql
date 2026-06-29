@@ -1,0 +1,1 @@
+ALTER TABLE "news_post" ADD COLUMN "fb_post_url" text;

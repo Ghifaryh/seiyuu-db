@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, timestamp, boolean } from 'drizzle-orm/pg-core'
 
 export const anime = pgTable('anime', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -10,5 +10,6 @@ export const anime = pgTable('anime', {
   status: text('status'),
   coverUrl: text('cover_url'),
   source: text('source').unique(),
+  enriched: boolean('enriched').default(false),
   syncedAt: timestamp('synced_at').defaultNow()
 })

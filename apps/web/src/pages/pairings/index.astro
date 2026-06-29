@@ -39,11 +39,11 @@ try {
     </div>
 
     <div class='flex gap-2 mb-6'>
-      <button class='text-sm px-3.5 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'>Most shared</button>
-      <button class='text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Most recent</button>
+      <button data-sort='shared' class='sort-btn text-sm px-3.5 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'>Most shared</button>
+      <button data-sort='recent' class='sort-btn text-sm px-3.5 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Most recent</button>
     </div>
 
-    <div class='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+    <div id='pairings-grid' class='grid grid-cols-1 sm:grid-cols-2 gap-4'>
       {pairings.map((p) => (
         <a href={`/pairings/${p.pairing.id}`}
           class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
@@ -65,3 +65,66 @@ try {
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  const API_BASE = '/api/v1'
+  let currentSort = 'shared'
+
+  function renderPairings(pairings: any[]) {
+    const grid = document.getElementById('pairings-grid')!
+    if (!pairings.length) {
+      grid.innerHTML = '<p class="text-sm text-neutral-500 col-span-2">No pairings found</p>'
+      return
+    }
+    grid.innerHTML = pairings.map((p: any) => `
+      <a href='/pairings/${p.pairing.id}'
+        class='border border-neutral-800 rounded-xl p-5 bg-neutral-900/50 hover:border-neutral-600 transition-colors'>
+        <div class='flex items-center mb-4'>
+          <div class='w-10 h-10 rounded-full overflow-hidden bg-neutral-800 flex-shrink-0'>
+            ${p.seiyuuA.imageUrl ? `<img src='${p.seiyuuA.imageUrl}' class='w-full h-full object-cover' />` : `<div class='w-full h-full flex items-center justify-center text-xs text-teal-300 bg-teal-900/60 font-medium'>${(p.seiyuuA.nameRomaji || '?').charAt(0)}</div>`}
+          </div>
+          ${p.seiyuuB ? `
+          <div class='w-10 h-10 rounded-full overflow-hidden bg-neutral-800 flex-shrink-0 -ml-3 border-2 border-neutral-950'>
+            ${p.seiyuuB.imageUrl ? `<img src='${p.seiyuuB.imageUrl}' class='w-full h-full object-cover' />` : `<div class='w-full h-full flex items-center justify-center text-xs text-teal-300 bg-teal-900/60 font-medium'>${(p.seiyuuB.nameRomaji || '?').charAt(0)}</div>`}
+          </div>
+          ` : ''}
+        </div>
+        <div class='text-base font-medium mb-1'>${escapeHtml(p.pairing.pairName ?? `${p.seiyuuA.nameRomaji} & ${p.seiyuuB?.nameRomaji ?? '?'}`)}</div>
+        <div class='text-sm text-neutral-500 mb-3'>
+          ${escapeHtml(p.seiyuuA.nameRomaji)} & ${p.seiyuuB?.nameRomaji ?? '?'}
+        </div>
+        <span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300'>${p.pairing.sharedCount} shared anime</span>
+      </a>
+    `).join('')
+  }
+
+  function escapeHtml(s: string) { return s.replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+  async function loadPairings(sort: string) {
+    try {
+      const res = await fetch(`${API_BASE}/pairings?page=1&limit=24&sort=${sort}`)
+      if (res.ok) {
+        const json = await res.json()
+        renderPairings(json.data ?? json)
+      }
+    } catch {}
+  }
+
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sort = btn.getAttribute('data-sort')!
+      if (sort === currentSort) return
+      currentSort = sort
+      document.querySelectorAll('.sort-btn').forEach(b => {
+        if (b.getAttribute('data-sort') === sort) {
+          b.classList.add('bg-teal-900/50', 'text-teal-300', 'font-medium')
+          b.classList.remove('text-neutral-400')
+        } else {
+          b.classList.remove('bg-teal-900/50', 'text-teal-300', 'font-medium')
+          b.classList.add('text-neutral-400')
+        }
+      })
+      loadPairings(sort)
+    })
+  })
+</script>

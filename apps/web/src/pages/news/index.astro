@@ -11,6 +11,7 @@ interface NewsItem {
   body: string
   category: string | null
   sourceUrl: string | null
+  fbPostUrl: string | null
   publishedAt: string | null
   seiyuus: { id: string; nameRomaji: string; nameKanji: string | null; imageUrl: string | null }[] | null
 }
@@ -54,7 +55,8 @@ function fixUrl(u: string) {
     <div id='news-list' class='flex flex-col gap-4'>
       {newsPosts.map((post) => {
         const hasBody = post.body && post.body.trim().length > 0
-        const isExternal = !hasBody && post.sourceUrl
+        const hasFbEmbed = post.fbPostUrl && post.fbPostUrl.trim().length > 0
+        const isExternal = !hasBody && !hasFbEmbed && post.sourceUrl
         const href = isExternal ? fixUrl(post.sourceUrl!) : `/news/${post.id}`
         const target = isExternal ? '_blank' : ''
         const rel = isExternal ? 'noopener noreferrer' : ''
@@ -76,10 +78,13 @@ function fixUrl(u: string) {
                   {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                 </span>
                 {isExternal && (<span class='text-xs text-teal-500'>🔗 external</span>)}
+                {hasFbEmbed && (<span class='text-xs text-blue-400'>📱 FB embed</span>)}
               </div>
               <h2 class='text-base font-medium mb-2 leading-snug'>{post.title}</h2>
               {hasBody ? (
                 <p class='text-sm text-neutral-400 leading-relaxed'>{post.body}</p>
+              ) : hasFbEmbed ? (
+                <p class='text-sm text-blue-400'>View Facebook embed →</p>
               ) : (
                 <p class='text-sm text-teal-500'>Read on source →</p>
               )}

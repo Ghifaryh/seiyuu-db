@@ -14,11 +14,13 @@ const publicPairingRoutes = new Elysia({ prefix: '/pairings' })
   .get('/', async ({ query }) => {
     const page = Number(query.page ?? 1)
     const limit = Number(query.limit ?? 24)
-    return await getAllPairings(page, limit)
+    const sort = (query.sort as string) ?? 'shared'
+    return await getAllPairings(page, limit, sort)
   }, {
     query: t.Object({
       page: t.Optional(t.String()),
-      limit: t.Optional(t.String())
+      limit: t.Optional(t.String()),
+      sort: t.Optional(t.String())
     })
   })
   .get('/:id', async ({ params, set }) => {

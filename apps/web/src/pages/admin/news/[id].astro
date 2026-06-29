@@ -49,6 +49,12 @@ const isNewEditor = id === 'new'
         <p id='source-hint' class='text-xs text-neutral-500 mt-1 hidden'>Source URL is required when body is empty</p>
       </div>
 
+      <div>
+        <input id='edit-fb-post' placeholder='Facebook post URL (embed)' type='url'
+          class='text-sm w-full px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <p class='text-xs text-neutral-500 mt-1'>Paste a Facebook post URL to embed it on the public page</p>
+      </div>
+
       <p id='edit-error' class='text-sm text-red-400 hidden'></p>
       <p id='edit-success' class='text-sm text-teal-400 hidden'></p>
 
@@ -81,6 +87,7 @@ const isNewEditor = id === 'new'
   const sourceInput = document.getElementById('edit-source') as HTMLInputElement
   const hasBodyToggle = document.getElementById('has-body-toggle') as HTMLInputElement
   const sourceHint = document.getElementById('source-hint') as HTMLParagraphElement
+  const fbPostInput = document.getElementById('edit-fb-post') as HTMLInputElement
   const taggedSeiyuu: { id: string; name: string }[] = []
 
   function renderTags() {
@@ -122,6 +129,7 @@ const isNewEditor = id === 'new'
       ;(document.getElementById('edit-title') as HTMLInputElement).value = p.title || ''
       ;(document.getElementById('edit-category') as HTMLSelectElement).value = p.category || 'roles'
       sourceInput.value = p.sourceUrl || ''
+      fbPostInput.value = p.fbPostUrl || ''
       taggedSeiyuu.length = 0
       if (p.seiyuus?.length) {
         taggedSeiyuu.push(...p.seiyuus.map((s: any) => ({ id: s.id, name: s.nameRomaji })))
@@ -187,6 +195,7 @@ const isNewEditor = id === 'new'
     const category = (document.getElementById('edit-category') as HTMLSelectElement).value
     const seiyuuIds = taggedSeiyuu.length > 0 ? taggedSeiyuu.map(s => s.id) : undefined
     const sourceUrl = normalizeUrl(sourceInput.value)
+    const fbPostUrl = fbPostInput.value.trim() || undefined
     const errorEl = document.getElementById('edit-error')!
     const successEl = document.getElementById('edit-success')!
 
@@ -206,7 +215,7 @@ const isNewEditor = id === 'new'
       const user = JSON.parse(localStorage.getItem('seiyuu_user') || '{}')
       const res = await fetch(`${API_BASE}/news`, {
         method: 'POST', headers: getAuthHeaders(),
-        body: JSON.stringify({ title, body: body || undefined, category, seiyuuIds, sourceUrl: sourceUrl || undefined, createdBy: user.id }),
+        body: JSON.stringify({ title, body: body || undefined, category, seiyuuIds, sourceUrl: sourceUrl || undefined, fbPostUrl, createdBy: user.id }),
       })
       if (res.ok) {
         successEl.textContent = 'Published! Redirecting...'
@@ -221,7 +230,7 @@ const isNewEditor = id === 'new'
     } else {
       const res = await fetch(`${API_BASE}/news/${postId}`, {
         method: 'PATCH', headers: getAuthHeaders(),
-        body: JSON.stringify({ title, body: body || undefined, category, seiyuuIds: seiyuuIds || undefined, sourceUrl: sourceUrl || undefined }),
+        body: JSON.stringify({ title, body: body || undefined, category, seiyuuIds: seiyuuIds || undefined, sourceUrl: sourceUrl || undefined, fbPostUrl: fbPostUrl || undefined }),
       })
       if (res.ok) {
         successEl.textContent = 'Saved!'

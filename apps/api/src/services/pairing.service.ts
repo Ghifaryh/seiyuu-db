@@ -2,8 +2,9 @@ import { db } from '../db/client'
 import { pairing, pairingAnime, seiyuu, anime, character, voiceRole } from '../db/schema'
 import { eq, or, desc, inArray, sql } from 'drizzle-orm'
 
-export async function getAllPairings(page = 1, limit = 24) {
+export async function getAllPairings(page = 1, limit = 24, sort: string = 'shared') {
   const offset = (page - 1) * limit
+  const orderBy = sort === 'recent' ? desc(pairing.createdAt) : desc(pairing.sharedCount)
 
   const results = await db
     .select({
@@ -24,7 +25,7 @@ export async function getAllPairings(page = 1, limit = 24) {
     })
     .from(pairing)
     .innerJoin(seiyuu, eq(pairing.seiyuuAId, seiyuu.id))
-    .orderBy(desc(pairing.sharedCount))
+    .orderBy(orderBy)
     .limit(limit)
     .offset(offset)
 

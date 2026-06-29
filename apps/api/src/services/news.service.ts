@@ -15,6 +15,7 @@ export async function getNews(category?: string, limit = 20) {
         body: newsPost.body,
         category: newsPost.category,
         sourceUrl: newsPost.sourceUrl,
+        fbPostUrl: newsPost.fbPostUrl,
         publishedAt: newsPost.publishedAt,
       },
       seiyuu: {
@@ -62,6 +63,7 @@ export async function getNewsById(id: string) {
         body: newsPost.body,
         category: newsPost.category,
         sourceUrl: newsPost.sourceUrl,
+        fbPostUrl: newsPost.fbPostUrl,
         publishedAt: newsPost.publishedAt,
         createdBy: newsPost.createdBy,
       },
@@ -92,6 +94,7 @@ export async function createNewsPost(data: {
   category?: string
   seiyuuIds?: string[]
   sourceUrl?: string
+  fbPostUrl?: string
   createdBy: string
 }) {
   const { seiyuuIds, ...postData } = data
@@ -124,6 +127,7 @@ export async function updateNewsPost(id: string, data: {
   category?: string
   seiyuuIds?: string[] | null
   sourceUrl?: string | null
+  fbPostUrl?: string | null
 }) {
   const { seiyuuIds, ...postData } = data
   const [result] = await db

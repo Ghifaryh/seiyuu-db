@@ -50,6 +50,20 @@
       "when": 1782702409678,
       "tag": "0006_neat_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782713129008,
+      "tag": "0007_organic_lizard",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782715248498,
+      "tag": "0008_soft_black_crow",
+      "breakpoints": true
     }
   ]
 }

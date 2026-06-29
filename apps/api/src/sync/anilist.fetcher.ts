@@ -206,3 +206,56 @@ export async function fetchVACareerFromAniList(anilistId: number) {
 
   return allEdges
 }
+
+// fetch full voice cast of an anime from AniList
+export async function fetchAnimeCastFromAniList(anilistId: number) {
+  const query = `
+    query ($id: Int, $page: Int) {
+      Media(id: $id) {
+        id
+        title { romaji native }
+        characters(sort: ROLE, page: $page, perPage: 50) {
+          pageInfo { hasNextPage currentPage }
+          edges {
+            role
+            node { id name { full native } }
+            voiceActors(language: JAPANESE) {
+              id
+              name { full native }
+              image { large }
+              dateOfBirth { year month day }
+              homeTown
+            }
+          }
+        }
+      }
+    }
+  `
+
+  const allEdges: any[] = []
+  let page = 1
+  let hasNextPage = true
+
+  while (hasNextPage) {
+    const res = await fetch(ANILIST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { id: anilistId, page } })
+    })
+
+    if (!res.ok) break
+
+    const json = await res.json() as any
+    const pageData = json.data?.Media?.characters
+
+    if (!pageData) break
+
+    allEdges.push(...pageData.edges)
+    hasNextPage = pageData.pageInfo.hasNextPage
+    page++
+
+    await Bun.sleep(700)
+  }
+
+  return allEdges
+}

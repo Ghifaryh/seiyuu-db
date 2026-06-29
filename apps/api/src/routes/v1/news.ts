@@ -36,6 +36,7 @@ const adminNewsRoutes = new Elysia({ prefix: '/news' })
       category: t.Optional(t.String()),
       seiyuuIds: t.Optional(t.Array(t.String())),
       sourceUrl: t.Optional(t.String()),
+      fbPostUrl: t.Optional(t.String()),
       createdBy: t.String()
     })
   })
@@ -64,6 +65,7 @@ const adminNewsRoutes = new Elysia({ prefix: '/news' })
       category: t.Optional(t.String()),
       seiyuuIds: t.Optional(t.Nullable(t.Array(t.String()))),
       sourceUrl: t.Optional(t.Nullable(t.String())),
+      fbPostUrl: t.Optional(t.Nullable(t.String())),
     })
   })
 
