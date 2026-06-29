@@ -122,6 +122,7 @@ const isNewEditor = id === 'new'
       ;(document.getElementById('edit-title') as HTMLInputElement).value = p.title || ''
       ;(document.getElementById('edit-category') as HTMLSelectElement).value = p.category || 'roles'
       sourceInput.value = p.sourceUrl || ''
+      taggedSeiyuu.length = 0
       if (p.seiyuus?.length) {
         taggedSeiyuu.push(...p.seiyuus.map((s: any) => ({ id: s.id, name: s.nameRomaji })))
         renderTags()
