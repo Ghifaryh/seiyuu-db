@@ -14,12 +14,14 @@ Existing anime databases (AniList, MAL, BehindTheVoiceActors) either treat seiyu
 - Kanji, romaji, and flexible name order search (Kayano Ai = Ai Kayano = 茅野愛衣)
 - Current season view — browse airing anime and their full voice cast
 - Seiyuu profiles with role history, season filter, and singer discography
-- Dynamic duo / pairing pages — discover VAs who frequently work together
-- Role announcement and agency news ticker
+- Game role tracking — video game voice roles with source links
+- Dynamic duo / pairing pages — discover VAs who frequently work together with auto-detection
+- Role announcement and agency news ticker with multi-seiyuu tagging
+- Admin panel — manage seiyuu enrichment, news, pairings, users, and manual sync
 
 ## Project status
 
-🚧 Active development — personal learning project. Not yet deployed.
+✅ Deployed at [seiyuu-db.gehu.me](https://seiyuu-db.gehu.me) — active development
 
 ## Tech stack
 
@@ -31,9 +33,10 @@ Existing anime databases (AniList, MAL, BehindTheVoiceActors) either treat seiyu
 | Database | PostgreSQL 16 | Relational, great JSON + fuzzy search |
 | ORM | Drizzle | TypeScript-native, no magic |
 | Search | MeiliSearch | Typo-tolerant, multilingual, self-hosted |
-| Data sources | AniList GraphQL + Jikan REST | Nightly sync into own DB |
+| Data sources | AniList GraphQL | Nightly sync into own DB |
 | Container | Docker + Docker Compose | Local dev + VPS production |
 | Image registry | GHCR | Free, integrates with GitHub Actions |
+| Reverse proxy | Caddy | Auto-TLS, simple config |
 
 ## Monorepo structure
 
@@ -42,11 +45,11 @@ seiyuu-db/
 ├── apps/
 │   ├── api/          # ElysiaJS backend (port 3001)
 │   └── web/          # Astro frontend (port 4321)
-├── packages/
-│   └── types/        # Shared TypeScript types
-├── docker-compose.yml
-├── tsconfig.base.json
-└── .env.example
+├── docker-compose.yml          # Dev: MeiliSearch only
+├── docker-compose.prod.yml     # Prod: MeiliSearch + API + Web
+├── portainer-stack.yml         # Portainer deployment stack
+├── .github/workflows/deploy.yml
+└── tsconfig.base.json
 ```
 
 ## Getting started
@@ -54,6 +57,7 @@ seiyuu-db/
 ### Prerequisites
 - Bun >= 1.x
 - Docker + Docker Compose
+- PostgreSQL (external, not containerized)
 
 ### 1. Clone and install
 ```bash
@@ -64,14 +68,13 @@ bun install
 
 ### 2. Set up environment
 ```bash
-cp .env.example apps/api/.env
-# edit apps/api/.env with your values
+cp apps/api/.env.example apps/api/.env
+# edit apps/api/.env with your DATABASE_URL, MEILI_MASTER_KEY, JWT_SECRET, etc.
 ```
 
 ### 3. Start local services
 ```bash
-# starts PostgreSQL + MeiliSearch
-docker compose up -d
+MEILI_MASTER_KEY=<key> docker compose up -d  # starts MeiliSearch (7700)
 ```
 
 ### 4. Run the apps
@@ -80,26 +83,27 @@ bun run dev:api    # → localhost:3001
 bun run dev:web    # → localhost:4321
 ```
 
+### 5. Seed admin account
+```bash
+ADMIN_EMAIL=admin@seiyuu.db ADMIN_PASSWORD=... bun run apps/api/src/seed-admin.ts
+```
+
 > API docs available at `localhost:3001/swagger` when the API is running.
 
-## Data sources
+## Deployment
 
-seiyuu.db does not store or redistribute raw API data publicly. It syncs from AniList and Jikan into a local PostgreSQL database via a nightly background job. Image URLs are sourced from AniList's CDN and served through a proxy layer.
+Push to main triggers GitHub Actions → builds Docker images → pushes to GHCR. Deploy via Portainer stack:
 
-## Roadmap
+- `ghcr.io/ghifaryh/seiyuu-db-api:latest` — Bun-based API
+- `ghcr.io/ghifaryh/seiyuu-db-web:latest` — Node-based Astro SSR
 
-- [ ] Drizzle schema + migrations
-- [ ] AniList + Jikan sync job
-- [ ] MeiliSearch indexer
-- [ ] Seiyuu search API endpoints
-- [ ] Season endpoints
-- [ ] Pairing auto-detection
-- [ ] Astro pages + components
-- [ ] Auth (JWT)
-- [ ] Admin panel
-- [ ] Docker production setup
-- [ ] GitHub Actions CI/CD
-- [ ] Deploy to VPS
+Required env vars in production: `DATABASE_URL`, `MEILI_MASTER_KEY`, `JWT_SECRET`.
+
+PostgreSQL is NOT containerized — runs on separate infrastructure.
+
+## Auth
+
+Two-tier: `superadmin` (can manage users) and `admin` (everything except user management). JWT stored in localStorage. Password change available per-user.
 
 ## License
 
