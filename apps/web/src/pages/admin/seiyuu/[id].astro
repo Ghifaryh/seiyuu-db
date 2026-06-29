@@ -105,6 +105,59 @@ const { id } = Astro.params
         <button id='save-btn' class='text-sm px-4 py-2.5 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>Save changes</button>
       </div>
     </div>
+
+    <div class='border-t border-neutral-800 pt-6 mt-6'>
+      <h3 class='text-sm font-medium text-neutral-400 mb-4'>Add new role</h3>
+
+      <div class='flex gap-2 mb-4'>
+        <button data-tab='anime' class='role-tab text-xs px-3 py-1.5 rounded-md bg-teal-900/50 text-teal-300'>Anime</button>
+        <button data-tab='game' class='role-tab text-xs px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Game</button>
+      </div>
+
+      <div id='tab-anime' class='flex flex-col gap-3'>
+        <div class='relative'>
+          <input type='text' id='anime-search' placeholder='Search anime by title...' autocomplete='off'
+            class='w-full text-sm px-3.5 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+          <div id='anime-results' class='absolute top-full left-0 right-0 mt-1 border border-neutral-700 rounded-md bg-neutral-950 max-h-40 overflow-y-auto z-10 hidden'></div>
+        </div>
+        <input type='text' id='anime-char' placeholder='Character name'
+          class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <div class='flex gap-3 items-end'>
+          <select id='anime-role-type' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white'>
+            <option value='main'>Main</option>
+            <option value='supporting'>Supporting</option>
+          </select>
+          <button id='add-anime-role' class='text-sm px-3 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>Add anime role</button>
+          <p id='anime-role-msg' class='text-xs text-teal-400 hidden'></p>
+        </div>
+        <input type='hidden' id='anime-id' value='' />
+      </div>
+
+      <div id='tab-game' class='hidden flex-col gap-3'>
+        <div class='relative'>
+          <input type='text' id='game-title' placeholder='Game title' autocomplete='off'
+            class='w-full text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+          <div id='game-results' class='absolute top-full left-0 right-0 mt-1 border border-neutral-700 rounded-md bg-neutral-950 max-h-40 overflow-y-auto z-10 hidden'></div>
+        </div>
+        <input type='text' id='game-char' placeholder='Character name'
+          class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <input type='text' id='game-source' placeholder='Source URL (optional)'
+          class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-900 text-white placeholder:text-neutral-600 outline-none focus:border-teal-600' />
+        <div class='flex gap-3 items-end'>
+          <select id='game-role-type' class='text-sm px-3 py-2 rounded-md border border-neutral-700 bg-neutral-950 text-white'>
+            <option value='main'>Main</option>
+            <option value='supporting'>Supporting</option>
+          </select>
+          <button id='add-game-role' class='text-sm px-3 py-2 rounded-md bg-teal-600 text-teal-50 font-medium hover:bg-teal-500'>Add game role</button>
+          <p id='game-role-msg' class='text-xs text-teal-400 hidden'></p>
+        </div>
+      </div>
+    </div>
+
+    <div class='border-t border-neutral-800 pt-6 mt-6'>
+      <h3 class='text-sm font-medium text-neutral-400 mb-3'>Manual roles</h3>
+      <div id='manual-roles' class='flex flex-col gap-2'></div>
+    </div>
   </div>
 </AdminSplitLayout>
 
@@ -116,6 +169,11 @@ const { id } = Astro.params
   function getAuthHeaders() {
     const token = localStorage.getItem('seiyuu_token')
     return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {}
+  }
+
+  function refreshPreview() {
+    const frame = document.getElementById('preview-frame') as HTMLIFrameElement | null
+    if (frame) frame.src = frame.src
   }
 
   const isSingerCheckbox = document.getElementById('isSinger') as HTMLInputElement
@@ -207,6 +265,298 @@ const { id } = Astro.params
       msg.classList.remove('hidden')
       msg.classList.add('text-red-400')
       msg.classList.remove('text-teal-400')
+    }
+  })
+
+  // tab switching
+  document.querySelectorAll('.role-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-tab')!
+      document.querySelectorAll('.role-tab').forEach(b => {
+        b.classList.remove('bg-teal-900/50', 'text-teal-300')
+        b.classList.add('text-neutral-400')
+      })
+      btn.classList.remove('text-neutral-400')
+      btn.classList.add('bg-teal-900/50', 'text-teal-300')
+      document.getElementById('tab-anime')!.classList.toggle('hidden', tab !== 'anime')
+      document.getElementById('tab-anime')!.classList.toggle('flex', tab === 'anime')
+      document.getElementById('tab-game')!.classList.toggle('hidden', tab !== 'game')
+      document.getElementById('tab-game')!.classList.toggle('flex', tab === 'game')
+    })
+  })
+
+  // anime search
+  const animeSearch = document.getElementById('anime-search') as HTMLInputElement
+  const animeResults = document.getElementById('anime-results')!
+  let animeTimer: any
+  animeSearch.addEventListener('input', () => {
+    clearTimeout(animeTimer)
+    const q = animeSearch.value.trim()
+    if (q.length < 2) { animeResults.classList.add('hidden'); return }
+    animeTimer = setTimeout(async () => {
+      const res = await fetch(`${API_BASE}/season/current?page=1&limit=50`)
+      const data = await res.json()
+      const animeList = data.data?.filter((a: any) =>
+        a.titleRomaji.toLowerCase().includes(q.toLowerCase())
+      ).slice(0, 6) || []
+      animeResults.innerHTML = animeList.length
+        ? animeList.map((a: any) =>
+            `<div class='px-3 py-2 text-sm hover:bg-neutral-800 cursor-pointer' data-id="${a.id}">${a.titleRomaji}${a.studio ? `<span class='text-neutral-500 text-xs ml-1'>${a.studio}</span>` : ''}</div>`
+          ).join('')
+        : '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>'
+      animeResults.querySelectorAll('div[data-id]').forEach(el => {
+        el.addEventListener('click', () => {
+          ;(document.getElementById('anime-id') as HTMLInputElement).value = el.getAttribute('data-id')!
+          animeSearch.value = el.textContent?.trim() || ''
+          animeResults.classList.add('hidden')
+        })
+      })
+      animeResults.classList.remove('hidden')
+    }, 250)
+  })
+  document.addEventListener('click', e => {
+    if (!animeSearch.contains(e.target as Node) && !animeResults.contains(e.target as Node)) {
+      animeResults.classList.add('hidden')
+    }
+  })
+
+  // add anime role
+  document.getElementById('add-anime-role')?.addEventListener('click', async () => {
+    const animeId = (document.getElementById('anime-id') as HTMLInputElement).value
+    const characterName = (document.getElementById('anime-char') as HTMLInputElement).value.trim()
+    const roleType = (document.getElementById('anime-role-type') as HTMLSelectElement).value
+    const msg = document.getElementById('anime-role-msg')!
+    msg.classList.add('hidden')
+    if (!animeId || !characterName) { msg.textContent = 'Select an anime and enter character name'; msg.classList.remove('hidden'); return }
+
+    const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/anime-roles`, {
+      method: 'POST', headers: getAuthHeaders(),
+      body: JSON.stringify({ animeId, characterName, roleType }),
+    })
+    if (res.ok) {
+      msg.textContent = 'Added!'; msg.classList.remove('hidden')
+      ;(document.getElementById('anime-char') as HTMLInputElement).value = ''
+      ;(document.getElementById('anime-id') as HTMLInputElement).value = ''
+      animeSearch.value = ''
+      setTimeout(() => msg.classList.add('hidden'), 2000)
+      refreshPreview()
+      loadManualRoles()
+    } else {
+      msg.textContent = 'Failed'; msg.classList.remove('hidden')
+    }
+  })
+
+  // add game role
+  document.getElementById('add-game-role')?.addEventListener('click', async () => {
+    const gameTitle = (document.getElementById('game-title') as HTMLInputElement).value.trim()
+    const characterName = (document.getElementById('game-char') as HTMLInputElement).value.trim()
+    const roleType = (document.getElementById('game-role-type') as HTMLSelectElement).value
+    const sourceUrl = (document.getElementById('game-source') as HTMLInputElement).value.trim() || undefined
+    const msg = document.getElementById('game-role-msg')!
+    msg.classList.add('hidden')
+    if (!gameTitle || !characterName) { msg.textContent = 'Enter game title and character name'; msg.classList.remove('hidden'); return }
+
+    const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/game-roles`, {
+      method: 'POST', headers: getAuthHeaders(),
+      body: JSON.stringify({ gameTitle, characterName, roleType, sourceUrl }),
+    })
+    if (res.ok) {
+      msg.textContent = 'Added!'; msg.classList.remove('hidden')
+      ;(document.getElementById('game-title') as HTMLInputElement).value = ''
+      ;(document.getElementById('game-char') as HTMLInputElement).value = ''
+      ;(document.getElementById('game-source') as HTMLInputElement).value = ''
+      setTimeout(() => msg.classList.add('hidden'), 2000)
+      loadManualRoles()
+      refreshPreview()
+    } else {
+      msg.textContent = 'Failed'; msg.classList.remove('hidden')
+    }
+  })
+
+  // load and display manual roles
+  async function loadManualRoles() {
+    const container = document.getElementById('manual-roles')!
+    container.innerHTML = '<span class="text-xs text-neutral-500">Loading...</span>'
+
+    try {
+      const [animeRes, gameRes] = await Promise.all([
+        fetch(`${API_BASE}/seiyuu/${seiyuuId}/roles`),
+        fetch(`${API_BASE}/seiyuu/${seiyuuId}/game-roles`),
+      ])
+      const animeRoles = animeRes.ok ? await animeRes.json() : []
+      const gameList = gameRes.ok ? await gameRes.json() : []
+
+      const items = [
+        ...animeRoles
+          .filter((r: any) => r.source?.startsWith?.('manual:'))
+          .map((r: any) => ({
+            id: r.roleId,
+            type: 'anime',
+            label: `${r.character?.nameRomaji || '?'} — ${r.anime?.titleRomaji || '?'} (${r.roleType || 'supporting'})`,
+          })),
+        ...gameList
+          .filter((g: any) => g.source?.startsWith?.('manual:'))
+          .map((g: any) => ({
+            id: g.id,
+            type: 'game',
+            label: `🎮 ${g.characterName} — ${g.gameTitle} (${g.roleType || 'supporting'})`,
+          })),
+      ]
+
+      if (items.length === 0) {
+        container.innerHTML = '<span class="text-xs text-neutral-600">No manually added roles</span>'
+        return
+      }
+
+      container.innerHTML = items.map((item: any) => `
+        <div class='flex items-center justify-between border border-neutral-800 rounded-lg px-3 py-2 text-sm'>
+          <span>${item.label}</span>
+          <div class='flex items-center gap-1'>
+            <button data-edit-role='${item.id}' data-edit-type='${item.type}' class='text-xs text-teal-400 hover:text-teal-300'>Edit</button>
+            <button data-delete-role='${item.id}' data-delete-type='${item.type}' class='text-xs text-red-400 hover:text-red-300 ml-1'>&times;</button>
+          </div>
+        </div>
+        <div id='edit-form-${item.id}' class='hidden flex-col gap-2 ml-3 mb-2 p-3 border border-neutral-700 rounded-lg'></div>
+      `).join('')
+
+      container.querySelectorAll('[data-edit-role]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const roleId = btn.getAttribute('data-edit-role')!
+          const type = btn.getAttribute('data-edit-type')!
+          const form = document.getElementById(`edit-form-${roleId}`)!
+          form.classList.toggle('hidden')
+          if (!form.classList.contains('hidden')) {
+            // pre-fill form — for game roles need to fetch full data
+            if (type === 'game') {
+              const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/game-roles`)
+              const games = res.ok ? await res.json() : []
+              const game = games.find((g: any) => g.id === roleId)
+              form.innerHTML = `
+                <input type='text' class='edit-field text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white' value='${game?.gameTitle || ''}' data-field='gameTitle' placeholder='Game title' />
+                <input type='text' class='edit-field text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white' value='${game?.characterName || ''}' data-field='characterName' placeholder='Character name' />
+                <input type='text' class='edit-field text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white' value='${game?.sourceUrl || ''}' data-field='sourceUrl' placeholder='Source URL' />
+                <select class='edit-field text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white' data-field='roleType'>
+                  <option value='main' ${game?.roleType === 'main' ? 'selected' : ''}>Main</option>
+                  <option value='supporting' ${game?.roleType === 'supporting' ? 'selected' : ''}>Supporting</option>
+                </select>
+                <button class='save-edit text-xs px-2 py-1 rounded-md bg-teal-600 text-teal-50' data-save='${roleId}' data-save-type='${type}'>Save</button>
+              `
+            } else {
+              const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/roles`)
+              const roles = res.ok ? await res.json() : []
+              const role = roles.find((r: any) => r.roleId === roleId)
+              form.innerHTML = `
+                <input type='text' class='edit-field text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white' value='${role?.character?.nameRomaji || ''}' data-field='characterName' placeholder='Character name' />
+                <select class='edit-field text-xs px-2 py-1.5 rounded-md border border-neutral-700 bg-neutral-950 text-white' data-field='roleType'>
+                  <option value='main' ${role?.roleType === 'main' ? 'selected' : ''}>Main</option>
+                  <option value='supporting' ${role?.roleType === 'supporting' ? 'selected' : ''}>Supporting</option>
+                </select>
+                <button class='save-edit text-xs px-2 py-1 rounded-md bg-teal-600 text-teal-50' data-save='${roleId}' data-save-type='${type}'>Save</button>
+              `
+            }
+          }
+        })
+      })
+
+      container.querySelectorAll('[data-delete-role]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const roleId = btn.getAttribute('data-delete-role')!
+          const type = btn.getAttribute('data-delete-type')!
+          const parent = btn.parentElement!
+          const originalHtml = parent.innerHTML
+
+          parent.innerHTML = `
+            <span class='text-xs text-red-400 mr-1'>Delete?</span>
+            <button data-confirm='${roleId}' data-confirm-type='${type}' class='text-xs px-2 py-0.5 rounded-md bg-red-600 text-red-50'>Yes</button>
+            <button data-cancel class='text-xs px-2 py-0.5 rounded-md border border-neutral-700 text-neutral-400 ml-1'>No</button>
+          `
+
+          const handleConfirm = async (ev: Event) => {
+            parent.removeEventListener('click', handleConfirm)
+            const b = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null
+            if (b?.hasAttribute('data-confirm')) {
+              const cId = b.getAttribute('data-confirm')!
+              const cType = b.getAttribute('data-confirm-type')!
+              const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/${cType}-roles/${cId}`, {
+                method: 'DELETE', headers: getAuthHeaders(),
+              })
+              if (res.ok) { loadManualRoles(); refreshPreview() } else {
+                parent.innerHTML = originalHtml
+                loadManualRoles()
+              }
+            }
+          }
+          parent.addEventListener('click', handleConfirm)
+        })
+      })
+
+      // save inline edits
+      container.addEventListener('click', async (e) => {
+        const saveBtn = (e.target as HTMLElement).closest('.save-edit') as HTMLElement | null
+        if (!saveBtn) return
+        e.stopPropagation()
+        const roleId = saveBtn.getAttribute('data-save')!
+        const type = saveBtn.getAttribute('data-save-type')!
+        const form = document.getElementById(`edit-form-${roleId}`)!
+        const fields = form.querySelectorAll('.edit-field')
+        const data: any = {}
+        fields.forEach(f => {
+          const el = f as HTMLInputElement | HTMLSelectElement
+          const field = el.getAttribute('data-field')!
+          data[field] = el.value.trim() || undefined
+        })
+        const res = await fetch(`${API_BASE}/seiyuu/${seiyuuId}/${type}-roles/${roleId}`, {
+          method: 'PATCH', headers: getAuthHeaders(),
+          body: JSON.stringify(data),
+        })
+        if (res.ok) {
+          form.classList.add('hidden')
+          loadManualRoles()
+          refreshPreview()
+        }
+      })
+    } catch {
+      container.innerHTML = '<span class="text-xs text-neutral-500">Failed to load</span>'
+    }
+  }
+
+  loadManualRoles()
+
+  // game title autocomplete
+  const gameTitleInput = document.getElementById('game-title') as HTMLInputElement
+  const gameResults = document.getElementById('game-results')!
+  let gameTimer: any
+  let gameTitlesCache: string[] | null = null
+
+  gameTitleInput.addEventListener('input', () => {
+    clearTimeout(gameTimer)
+    const q = gameTitleInput.value.trim()
+    if (q.length < 2) { gameResults.classList.add('hidden'); return }
+    gameTimer = setTimeout(async () => {
+      if (!gameTitlesCache) {
+        try {
+          const res = await fetch(`${API_BASE}/seiyuu/game-titles`)
+          if (res.ok) gameTitlesCache = await res.json()
+        } catch { gameTitlesCache = [] }
+      }
+      const matches = (gameTitlesCache || []).filter((t: string) =>
+        t.toLowerCase().includes(q.toLowerCase())
+      ).slice(0, 6)
+      gameResults.innerHTML = matches.length
+        ? matches.map((t: string) => `<div class='game-match px-3 py-2 text-sm hover:bg-neutral-800 cursor-pointer'>${t}</div>`).join('')
+        : '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>'
+      gameResults.querySelectorAll('.game-match').forEach(el => {
+        el.addEventListener('click', () => {
+          gameTitleInput.value = el.textContent?.trim() || ''
+          gameResults.classList.add('hidden')
+        })
+      })
+      gameResults.classList.remove('hidden')
+    }, 250)
+  })
+  document.addEventListener('click', e => {
+    if (!gameTitleInput.contains(e.target as Node) && !gameResults.contains(e.target as Node)) {
+      gameResults.classList.add('hidden')
     }
   })
 </script>

@@ -140,11 +140,34 @@ const isNew = id === 'new'
       }
     })
 
-    document.getElementById('delete-btn')?.addEventListener('click', async () => {
-      if (!confirm('Delete this pairing?')) return
-      const res = await fetch(`${API_BASE}/pairings/${pairingId}`, { method: 'DELETE', headers: getAuthHeaders() })
-      if (res.ok) window.location.href = '/admin/pairings'
+    function attachDeleteHandler() {
+      const btn = document.getElementById('delete-btn')
+      if (!btn) return
+      btn.addEventListener('click', () => {
+        const parent = btn.parentElement!
+        parent.innerHTML = `
+          <span class='text-xs text-red-400 mr-2'>Delete?</span>
+          <button id='confirm-delete' class='text-xs px-2 py-1 rounded-md bg-red-600 text-red-50 font-medium cursor-pointer'>Yes</button>
+          <button id='cancel-delete' class='text-xs px-2 py-1 rounded-md border border-neutral-700 text-neutral-400 ml-1 cursor-pointer'>No</button>
+        `
+      }, { once: true })
+    }
+
+    // use event delegation for confirm/cancel
+    document.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement
+
+      if (target.id === 'confirm-delete') {
+        const res = await fetch(`${API_BASE}/pairings/${pairingId}`, { method: 'DELETE', headers: getAuthHeaders() })
+        if (res.ok) window.location.href = '/admin/pairings'
+      }
+
+      if (target.id === 'cancel-delete') {
+        render()
+      }
     })
+
+    attachDeleteHandler()
 
     document.getElementById('detect-btn')?.addEventListener('click', async () => {
       const msg = document.getElementById('detect-msg')!
@@ -162,6 +185,7 @@ const isNew = id === 'new'
 
     if (isNew) attachPickerSearch('seiyuuA')
     if (isNew) attachPickerSearch('seiyuuB')
+    attachDeleteHandler()
   }
 
   function renderSeiyuuPickers() {

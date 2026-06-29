@@ -1,0 +1,1 @@
+ALTER TABLE "game_role" ADD COLUMN "source_url" text;

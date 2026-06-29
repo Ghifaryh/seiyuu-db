@@ -29,6 +29,20 @@
       "when": 1782456095923,
       "tag": "0003_talented_proudstar",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782697435284,
+      "tag": "0004_vengeful_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782699229279,
+      "tag": "0005_military_silvermane",
+      "breakpoints": true
     }
   ]
 }

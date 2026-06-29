@@ -93,6 +93,7 @@ import AdminGuard from '../../../components/admin/AdminGuard.astro'
         const originalHtml = parent.innerHTML
 
         // replace with confirm UI
+        parent.classList.add('items-center')
         parent.innerHTML = `
           <span class='text-xs text-red-400 mr-2'>Delete?</span>
           <button data-confirm-delete="${deleteId}" class='text-xs px-3 py-1 rounded-md bg-red-600 text-red-50 font-medium'>Yes</button>

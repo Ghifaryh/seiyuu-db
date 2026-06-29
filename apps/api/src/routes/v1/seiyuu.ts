@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia'
-import { getAllSeiyuu, getSeiyuuById, getSeiyuuRoles, updateSeiyuu } from '../../services/seiyuu.service'
+import { getAllSeiyuu, getSeiyuuById, getSeiyuuRoles, getSeiyuuGameRoles, updateSeiyuu, addAnimeRole, addGameRole, deleteAnimeRole, deleteGameRole, updateAnimeRole, updateGameRole, getGameTitles } from '../../services/seiyuu.service'
 import { adminMiddleware } from '../../middleware/auth.middleware'
 
 export const seiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
@@ -49,6 +49,17 @@ export const seiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
     })
   })
 
+  // GET /api/v1/game-titles
+  .get('/game-titles', async () => {
+    return await getGameTitles()
+  })
+
+  .get('/:id/game-roles', async ({ params }) => {
+    return await getSeiyuuGameRoles(params.id)
+  }, {
+    params: t.Object({ id: t.String() })
+  })
+
 export const adminSeiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
   .use(adminMiddleware)
   .patch('/:id', async ({ params, body, set }) => {
@@ -68,6 +79,75 @@ export const adminSeiyuuRoutes = new Elysia({ prefix: '/seiyuu' })
       musicSingles: t.Optional(t.Nullable(t.Array(t.String()))),
       musicAlbums: t.Optional(t.Nullable(t.Array(t.String()))),
       adminNotes: t.Optional(t.Nullable(t.String())),
+    })
+  })
+  .post('/:id/anime-roles', async ({ params, body, set }) => {
+    try {
+      const result = await addAnimeRole(params.id, body)
+      set.status = 201
+      return result
+    } catch (e: any) {
+      console.error('addAnimeRole error:', e.message || e)
+      set.status = 400
+      return { message: 'Failed to add anime role', error: e.message || String(e) }
+    }
+  }, {
+    params: t.Object({ id: t.String() }),
+    body: t.Object({
+      animeId: t.String(),
+      characterName: t.String(),
+      roleType: t.Optional(t.String()),
+    })
+  })
+  .post('/:id/game-roles', async ({ params, body, set }) => {
+    const result = await addGameRole(params.id, body)
+    set.status = 201
+    return result
+  }, {
+    params: t.Object({ id: t.String() }),
+    body: t.Object({
+      gameTitle: t.String(),
+      characterName: t.String(),
+      roleType: t.Optional(t.String()),
+      sourceUrl: t.Optional(t.String()),
+    })
+  })
+  .delete('/:id/anime-roles/:roleId', async ({ params, set }) => {
+    const result = await deleteAnimeRole(params.roleId, params.id)
+    if (!result) { set.status = 404; return { message: 'Not found or not deletable' } }
+    return result
+  }, {
+    params: t.Object({ id: t.String(), roleId: t.String() })
+  })
+  .patch('/:id/anime-roles/:roleId', async ({ params, body, set }) => {
+    const result = await updateAnimeRole(params.roleId, params.id, body)
+    if (!result) { set.status = 404; return { message: 'Not found' } }
+    return result
+  }, {
+    params: t.Object({ id: t.String(), roleId: t.String() }),
+    body: t.Object({
+      characterName: t.Optional(t.String()),
+      roleType: t.Optional(t.String()),
+    })
+  })
+  .delete('/:id/game-roles/:roleId', async ({ params, set }) => {
+    const result = await deleteGameRole(params.roleId, params.id)
+    if (!result) { set.status = 404; return { message: 'Not found or not deletable' } }
+    return result
+  }, {
+    params: t.Object({ id: t.String(), roleId: t.String() })
+  })
+  .patch('/:id/game-roles/:roleId', async ({ params, body, set }) => {
+    const result = await updateGameRole(params.roleId, params.id, body)
+    if (!result) { set.status = 404; return { message: 'Not found' } }
+    return result
+  }, {
+    params: t.Object({ id: t.String(), roleId: t.String() }),
+    body: t.Object({
+      gameTitle: t.Optional(t.String()),
+      characterName: t.Optional(t.String()),
+      roleType: t.Optional(t.String()),
+      sourceUrl: t.Optional(t.Nullable(t.String())),
     })
   })
   .get('/:id/roles', async ({ params, query }) => {

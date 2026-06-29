@@ -49,11 +49,13 @@ interface RoleItem {
 
 let profile: SeiyuuProfile | null = null
 let roles: RoleItem[] = []
+let gameRoles: { id: string; gameTitle: string; characterName: string; roleType: string | null; sourceUrl: string | null }[] = []
 let error = ''
 
 try {
   profile = await fetch(`${apiBase}/api/v1/seiyuu/${id}`).then(r => r.ok ? r.json() : null)
   roles = await fetch(`${apiBase}/api/v1/seiyuu/${id}/roles`).then(r => r.ok ? r.json() : [])
+  gameRoles = await fetch(`${apiBase}/api/v1/seiyuu/${id}/game-roles`).then(r => r.ok ? r.json() : [])
 } catch {
   error = 'Failed to load seiyuu data'
 }
@@ -183,6 +185,7 @@ const thisSeasonRoles = roles.filter(r =>
           <button data-filter='all' class='role-filter-btn text-sm px-3 py-1.5 rounded-md bg-teal-900/50 text-teal-300 font-medium'>All roles</button>
           <button data-filter='main' class='role-filter-btn text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Main</button>
           <button data-filter='supporting' class='role-filter-btn text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Supporting</button>
+          <button data-filter='game' class='role-filter-btn text-sm px-3 py-1.5 rounded-md text-neutral-400 hover:bg-neutral-900'>Game</button>
         </div>
         <select id='season-filter' class='text-sm px-3 py-1.5 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-300'>
           <option value='all'>All time</option>
@@ -218,6 +221,38 @@ const thisSeasonRoles = roles.filter(r =>
           </div>
         </div>
       ))}
+      {gameRoles.length > 0 && (
+        <div class='season-group mb-6' data-season='game'>
+          <div class='flex items-center gap-2 text-sm font-medium text-neutral-400 border-b border-neutral-800 pb-2 mb-3'>
+            Game roles
+            <span class='text-xs px-2 py-0.5 rounded-full bg-purple-900/50 text-purple-300'>{gameRoles.length} roles</span>
+          </div>
+          <div class='flex flex-col gap-2'>
+            {gameRoles.map((gr) => (
+              <div class='role-item flex items-center gap-4 border border-neutral-800 rounded-lg px-4 py-3 bg-neutral-900/50' data-role-type='game'>
+                <div class='w-10 h-10 rounded-lg bg-purple-900/40 flex items-center justify-center text-sm font-medium text-purple-300 flex-shrink-0'>
+                  🎮
+                </div>
+                <div class='flex-1'>
+                  <div class='text-sm font-medium'>{gr.characterName}</div>
+                  <div class='text-xs text-neutral-500 mt-0.5'>{gr.gameTitle}</div>
+                </div>
+                {gr.roleType === 'main' ? (
+                  <span class='text-xs px-2.5 py-1 rounded-full bg-teal-900/50 text-teal-300 whitespace-nowrap'>Main</span>
+                ) : (
+                  <span class='text-xs px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 whitespace-nowrap'>Support</span>
+                )}
+                {gr.sourceUrl && (
+                  <a href={gr.sourceUrl} target='_blank' rel='noopener noreferrer'
+                    class='text-xs px-2 py-1 rounded-md border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 whitespace-nowrap'>
+                    Source ↗
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )}
 </BaseLayout>
@@ -257,7 +292,7 @@ const thisSeasonRoles = roles.filter(r =>
   document.querySelectorAll('.role-filter-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const filter = btn.getAttribute('data-filter')
-      currentType = filter
+      currentType = filter!
 
       document.querySelectorAll('.role-filter-btn').forEach((b) => {
         b.classList.remove('bg-teal-900/50', 'text-teal-300', 'font-medium')

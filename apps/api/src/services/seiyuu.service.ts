@@ -1,5 +1,6 @@
 import { db } from '../db/client'
 import { seiyuu, seiyuuEnrichment, voiceRole, character, anime } from '../db/schema'
+import { gameRole } from '../db/schema/game_role'
 import { eq, ilike, or, sql } from 'drizzle-orm'
 import { enrichSeiyuuCareer } from './seiyuu-enrichment.service'
 
@@ -61,6 +62,7 @@ export async function getSeiyuuRoles(
       roleId: voiceRole.id,
       roleType: voiceRole.roleType,
       language: voiceRole.language,
+      source: voiceRole.source,
       character: {
         id: character.id,
         nameRomaji: character.nameRomaji,
@@ -139,4 +141,150 @@ export async function updateSeiyuu(id: string, data: {
 
   // return updated profile
   return getSeiyuuById(id)
+}
+
+export async function addAnimeRole(seiyuuId: string, data: {
+  animeId: string
+  characterName: string
+  roleType?: string
+}) {
+  // upsert character
+  const [charRecord] = await db
+    .insert(character)
+    .values({
+      animeId: data.animeId,
+      nameRomaji: data.characterName,
+      roleType: data.roleType || 'supporting',
+      source: `manual:${data.animeId}:${data.characterName}`,
+    })
+    .onConflictDoUpdate({
+      target: character.source,
+      set: { nameRomaji: data.characterName, roleType: data.roleType || 'supporting' },
+    })
+    .returning()
+
+  if (!charRecord) throw new Error('Failed to upsert character')
+
+  const [result] = await db
+    .insert(voiceRole)
+    .values({
+      seiyuuId,
+      characterId: charRecord.id,
+      animeId: data.animeId,
+      roleType: data.roleType || 'supporting',
+      language: 'Japanese',
+      source: `manual:${data.animeId}:${data.characterName}:${seiyuuId}`,
+    })
+    .onConflictDoUpdate({
+      target: voiceRole.source,
+      set: { roleType: data.roleType || 'supporting' },
+    })
+    .returning()
+
+  return result
+}
+
+export async function addGameRole(seiyuuId: string, data: {
+  gameTitle: string
+  characterName: string
+  roleType?: string
+  sourceUrl?: string | null
+}) {
+  const source = `manual:${data.gameTitle}:${data.characterName}:${seiyuuId}`
+  const [result] = await db
+    .insert(gameRole)
+    .values({
+      seiyuuId,
+      gameTitle: data.gameTitle,
+      characterName: data.characterName,
+      roleType: data.roleType || 'supporting',
+      sourceUrl: data.sourceUrl ?? undefined,
+      source,
+    })
+    .onConflictDoUpdate({
+      target: gameRole.source,
+      set: { roleType: data.roleType || 'supporting', sourceUrl: data.sourceUrl ?? undefined },
+    })
+    .returning()
+
+  return result
+}
+
+export async function deleteAnimeRole(roleId: string, seiyuuId: string) {
+  const [role] = await db.select().from(voiceRole).where(eq(voiceRole.id, roleId))
+  if (!role || role.seiyuuId !== seiyuuId) return null
+  if (!role.source?.startsWith('manual:')) return null
+  await db.delete(voiceRole).where(eq(voiceRole.id, roleId))
+  return { deleted: true }
+}
+
+export async function deleteGameRole(roleId: string, seiyuuId: string) {
+  const [role] = await db.select().from(gameRole).where(eq(gameRole.id, roleId))
+  if (!role || role.seiyuuId !== seiyuuId) return null
+  if (!role.source?.startsWith('manual:')) return null
+  await db.delete(gameRole).where(eq(gameRole.id, roleId))
+  return { deleted: true }
+}
+
+export async function updateAnimeRole(roleId: string, seiyuuId: string, data: {
+  characterName?: string
+  roleType?: string
+}) {
+  const [role] = await db.select().from(voiceRole).where(eq(voiceRole.id, roleId))
+  if (!role || role.seiyuuId !== seiyuuId) return null
+
+  // also update the character name
+  if (data.characterName) {
+    await db.update(character)
+      .set({ nameRomaji: data.characterName })
+      .where(eq(character.id, role.characterId))
+  }
+  if (data.roleType) {
+    await db.update(voiceRole).set({ roleType: data.roleType }).where(eq(voiceRole.id, roleId))
+  }
+  return { updated: true }
+}
+
+export async function updateGameRole(roleId: string, seiyuuId: string, data: {
+  gameTitle?: string
+  characterName?: string
+  roleType?: string
+  sourceUrl?: string | null
+}) {
+  const [role] = await db.select().from(gameRole).where(eq(gameRole.id, roleId))
+  if (!role || role.seiyuuId !== seiyuuId) return null
+
+  const updates: any = {}
+  if (data.gameTitle) updates.gameTitle = data.gameTitle
+  if (data.characterName) updates.characterName = data.characterName
+  if (data.roleType) updates.roleType = data.roleType
+  if (data.sourceUrl !== undefined) updates.sourceUrl = data.sourceUrl
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(gameRole).set(updates).where(eq(gameRole.id, roleId))
+  }
+  return { updated: true }
+}
+
+export async function getGameTitles() {
+  const results = await db
+    .selectDistinct({ gameTitle: gameRole.gameTitle })
+    .from(gameRole)
+    .orderBy(gameRole.gameTitle)
+  return results.map(r => r.gameTitle)
+}
+
+export async function getSeiyuuGameRoles(seiyuuId: string) {
+  return db
+    .select({
+      id: gameRole.id,
+      gameTitle: gameRole.gameTitle,
+      characterName: gameRole.characterName,
+      roleType: gameRole.roleType,
+      sourceUrl: gameRole.sourceUrl,
+      source: gameRole.source,
+    })
+    .from(gameRole)
+    .where(eq(gameRole.seiyuuId, seiyuuId))
+    .orderBy(gameRole.gameTitle)
 }
