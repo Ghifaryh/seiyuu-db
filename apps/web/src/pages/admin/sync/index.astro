@@ -29,13 +29,18 @@ import AdminGuard from '../../../components/admin/AdminGuard.astro'
   }
 
   async function triggerSync(year: number, quarter: string, el: HTMLElement) {
-    el.innerHTML = '<span class="inline-block w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></span>'
+    el.innerHTML = 'Syncing...'
+    el.classList.add('text-amber-400')
     const res = await fetch(`${API_BASE}/sync/season/${year}/${quarter}`, { method: 'POST', headers: getAuthHeaders() })
     if (res.ok) {
-      el.textContent = '✓'
-      setTimeout(() => loadSeasons(), 3000)
+      el.textContent = 'Started ✓'
+      el.classList.remove('text-amber-400')
+      el.classList.add('text-teal-400')
+      // sync runs in background — the ✓ just means the job started
+      setTimeout(() => loadSeasons(), 5000)
     } else {
-      el.textContent = '✗'
+      el.textContent = 'Failed ✗'
+      el.classList.add('text-red-400')
     }
   }
 
