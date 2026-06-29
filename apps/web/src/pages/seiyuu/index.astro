@@ -42,6 +42,13 @@ try {
       <p class='text-sm text-neutral-400'>{data.total} voice actors indexed</p>
     </div>
 
+    <form action='/search' method='GET' id='search-form' class='relative flex items-center gap-3 border border-neutral-700 rounded-lg px-4 py-3 mb-6 focus-within:border-teal-600 transition-colors'>
+      <span class='text-neutral-500 text-lg'>🔍</span>
+      <input type='text' id='search-input' name='q' placeholder='Search by name...' autocomplete='off'
+        class='flex-1 bg-transparent outline-none text-sm placeholder:text-neutral-600' />
+      <div id='search-results' class='absolute top-full left-0 right-0 mt-1 border border-neutral-700 rounded-md bg-neutral-950 max-h-60 overflow-y-auto z-10 hidden'></div>
+    </form>
+
     <div class='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4'>
       {data.data.map((s) => (
         <a href={`/seiyuu/${s.id}`}
@@ -80,3 +87,40 @@ try {
     )}
   </div>
 </BaseLayout>
+
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement
+  const searchResults = document.getElementById('search-results')!
+  const searchForm = document.getElementById('search-form')!
+  let searchTimer: any
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer)
+    const q = searchInput.value.trim()
+    if (q.length < 2) { searchResults.classList.add('hidden'); return }
+    searchTimer = setTimeout(async () => {
+      const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=6`)
+      if (!res.ok) { searchResults.classList.add('hidden'); return }
+      const data = await res.json()
+      const items = data.results || []
+      searchResults.innerHTML = items.length
+        ? items.map((s: any) => `
+          <a href='/seiyuu/${s.id}' class='flex items-center gap-3 px-3 py-2 text-sm hover:bg-neutral-800 cursor-pointer'>
+            ${s.imageUrl ? `<img src='${s.imageUrl}' class='w-8 h-8 rounded-full object-cover flex-shrink-0' />` : `<div class='w-8 h-8 rounded-full bg-teal-900/60 flex items-center justify-center text-xs font-medium text-teal-300 flex-shrink-0'>${(s.nameRomaji || '?').charAt(0)}</div>`}
+            <div class='flex-1 min-w-0'>
+              <div class='text-sm truncate'>${s.nameRomaji}</div>
+              <div class='text-xs text-neutral-500 truncate'>${s.nameKanji ?? ''}</div>
+            </div>
+          </a>
+        `).join('')
+        : '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>'
+      searchResults.classList.remove('hidden')
+    }, 250)
+  })
+
+  document.addEventListener('click', (e) => {
+    if (!searchForm.contains(e.target as Node)) {
+      searchResults.classList.add('hidden')
+    }
+  })
+</script>
